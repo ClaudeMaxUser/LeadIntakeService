@@ -107,7 +107,31 @@ describe('End-to-End Webhook & Lead Lifecycle Integration', () => {
     expect(patchRes.status).toBe(200);
     expect(patchRes.body.status).toBe('CONTACTED');
 
-    // 6. Test idempotent no-op status update
+    // 6. Update lead details: full_name and email via PATCH /leads/:id
+    const updateDetailsRes = await request(app)
+      .patch(`/leads/${createdLeadId}`)
+      .set('Authorization', `Bearer ${config.API_KEY}`)
+      .send({
+        full_name: 'E2E Updated User',
+        email: 'e2e.updated@example.com',
+      });
+
+    expect(updateDetailsRes.status).toBe(200);
+    expect(updateDetailsRes.body.full_name).toBe('E2E Updated User');
+    expect(updateDetailsRes.body.email).toBe('e2e.updated@example.com');
+
+    // Test no-op lead detail update (unchanged values)
+    const noopDetailsRes = await request(app)
+      .patch(`/leads/${createdLeadId}`)
+      .set('Authorization', `Bearer ${config.API_KEY}`)
+      .send({
+        full_name: 'E2E Updated User',
+        email: 'e2e.updated@example.com',
+      });
+
+    expect(noopDetailsRes.status).toBe(200);
+
+    // 7. Test idempotent no-op status update
     const noopRes = await request(app)
       .patch(`/leads/${createdLeadId}/status`)
       .set('Authorization', `Bearer ${config.API_KEY}`)
@@ -116,7 +140,7 @@ describe('End-to-End Webhook & Lead Lifecycle Integration', () => {
     expect(noopRes.status).toBe(200);
     expect(noopRes.body.status).toBe('CONTACTED');
 
-    // 7. Test illegal status transition: CONTACTED -> NEW
+    // 8. Test illegal status transition: CONTACTED -> NEW
     const illegalRes = await request(app)
       .patch(`/leads/${createdLeadId}/status`)
       .set('Authorization', `Bearer ${config.API_KEY}`)
@@ -124,7 +148,8 @@ describe('End-to-End Webhook & Lead Lifecycle Integration', () => {
 
     expect(illegalRes.status).toBe(400);
 
-    // 8. Verify Activity Timeline audit log
+    // 9. Verify Activity Timeline audit log contains all 3 core required audit types:
+    // Lead Created, Lead Updated, Status Changed (plus Duplicate Ignored)
     const activitiesRes = await request(app)
       .get(`/leads/${createdLeadId}/activities`)
       .set('Authorization', `Bearer ${config.API_KEY}`);
@@ -134,8 +159,16 @@ describe('End-to-End Webhook & Lead Lifecycle Integration', () => {
 
     const types = activitiesRes.body.map((a: any) => a.type);
     expect(types).toContain('LEAD_CREATED');
-    expect(types).toContain('DUPLICATE_IGNORED');
+    expect(types).toContain('LEAD_UPDATED');
     expect(types).toContain('STATUS_CHANGED');
+    expect(types).toContain('DUPLICATE_IGNORED');
+
+    const leadUpdatedActivity = activitiesRes.body.find((a: any) => a.type === 'LEAD_UPDATED');
+    expect(leadUpdatedActivity).toBeDefined();
+    expect(leadUpdatedActivity.metadata.updatedFields).toEqual(['full_name', 'email']);
+    expect(leadUpdatedActivity.metadata.previous.full_name).toBe('E2E Test User');
+    expect(leadUpdatedActivity.metadata.current.full_name).toBe('E2E Updated User');
+    expect(leadUpdatedActivity.actor).toBe('user:dashboard');
 
     const statusChangeActivity = activitiesRes.body.find((a: any) => a.type === 'STATUS_CHANGED');
     expect(statusChangeActivity.metadata).toMatchObject({

@@ -5,6 +5,7 @@ import { Loading } from '../components/common/Loading.js';
 import { LeadDetail } from '../components/LeadDetail/index.js';
 import { useActivities } from '../hooks/useActivities.js';
 import { useLead } from '../hooks/useLead.js';
+import { useUpdateLead } from '../hooks/useUpdateLead.js';
 import { useUpdateStatus } from '../hooks/useUpdateStatus.js';
 import { LeadStatus } from '../types/index.js';
 
@@ -18,10 +19,20 @@ export const LeadDetailPage: React.FC = () => {
     refetch: refetchActivities,
   } = useActivities(id);
   const { updateStatus, updating: updatingStatus, error: updateError } = useUpdateStatus();
+  const { updateLead, updating: updatingLead, error: leadUpdateError } = useUpdateLead();
 
   const handleUpdateStatus = async (newStatus: LeadStatus, note?: string) => {
     if (!id) return;
     const updated = await updateStatus(id, newStatus, note);
+    if (updated) {
+      setLead(updated);
+      refetchActivities();
+    }
+  };
+
+  const handleUpdateLead = async (updates: { full_name?: string; email?: string | null; phone?: string | null }) => {
+    if (!id) return;
+    const updated = await updateLead(id, updates);
     if (updated) {
       setLead(updated);
       refetchActivities();
@@ -71,6 +82,9 @@ export const LeadDetailPage: React.FC = () => {
         onUpdateStatus={handleUpdateStatus}
         updatingStatus={updatingStatus}
         updateError={updateError}
+        onUpdateLead={handleUpdateLead}
+        updatingLead={updatingLead}
+        leadUpdateError={leadUpdateError}
         onRefreshActivities={refetchActivities}
       />
     </div>

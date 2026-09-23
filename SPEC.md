@@ -251,6 +251,14 @@ Body: `{ "status": "CONTACTED", "note"?: string }`.
 - `401` — missing/invalid API key.
 - `404` — lead not found.
 
+#### `PATCH /leads/:id`
+Body: `{ "full_name"?: string, "email"?: string | null, "phone"?: string | null }`.
+- `200` — updated lead. Writes a `LEAD_UPDATED` activity with `actor: "user:dashboard"` containing
+  diff metadata (`updatedFields`, `previous`, `current`), unless values are identical (no-op).
+- `400` — validation failure (empty body, invalid email format, invalid phone characters, or unknown properties).
+- `401` — missing/invalid API key.
+- `404` — lead not found.
+
 #### `GET /health`  *(no API key — deployment platform readiness check)*
 - `200` — `{ "status": "ok" }`.
 

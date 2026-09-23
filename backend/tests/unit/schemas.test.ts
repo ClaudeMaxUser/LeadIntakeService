@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { UpdateLeadSchema } from '../../src/modules/leads/schemas.js';
 import { extractLeadData, MetaWebhookPayloadSchema, normalizeMetaPayload } from '../../src/modules/webhook/schemas.js';
 
 describe('Webhook Payload Parsing & Extraction', () => {
@@ -116,5 +117,66 @@ describe('Webhook Payload Parsing & Extraction', () => {
     const normalized = normalizeMetaPayload(parseResult.data!);
     const extraction = extractLeadData(normalized!);
     expect(extraction.missingFields).toContain('email or phone_number');
+  });
+});
+
+describe('UpdateLeadSchema Validation & Security Sanitization', () => {
+  it('successfully parses valid full update payload', () => {
+    const payload = {
+      full_name: 'Jane Updated',
+      email: 'jane.new@example.com',
+      phone: '+1-555-0199',
+    };
+    const res = UpdateLeadSchema.safeParse(payload);
+    expect(res.success).toBe(true);
+    expect(res.data).toEqual({
+      full_name: 'Jane Updated',
+      email: 'jane.new@example.com',
+      phone: '+1-555-0199',
+    });
+  });
+
+  it('successfully parses partial updates', () => {
+    const res = UpdateLeadSchema.safeParse({ email: 'updated@example.com' });
+    expect(res.success).toBe(true);
+    expect(res.data?.email).toBe('updated@example.com');
+  });
+
+  it('rejects empty object without any fields', () => {
+    const res = UpdateLeadSchema.safeParse({});
+    expect(res.success).toBe(false);
+    expect(res.error?.issues[0].message).toContain('At least one field');
+  });
+
+  it('rejects invalid email addresses', () => {
+    const res = UpdateLeadSchema.safeParse({ email: 'not-an-email' });
+    expect(res.success).toBe(false);
+    expect(res.error?.issues[0].message).toContain('Invalid email');
+  });
+
+  it('rejects invalid phone characters (letters / injection payloads)', () => {
+    const res = UpdateLeadSchema.safeParse({ phone: '123-abc-DROP TABLE' });
+    expect(res.success).toBe(false);
+    expect(res.error?.issues[0].message).toContain('Phone number contains invalid characters');
+  });
+
+  it('rejects unrecognized extra keys due to strict schema mode', () => {
+    const res = UpdateLeadSchema.safeParse({
+      full_name: 'Valid Name',
+      role: 'admin',
+      status: 'CONVERTED',
+    });
+    expect(res.success).toBe(false);
+    expect(res.error?.issues[0].message).toContain("Unrecognized key");
+  });
+
+  it('sanitizes null bytes and trims whitespace', () => {
+    const res = UpdateLeadSchema.safeParse({
+      full_name: '  Hacker\0 Name  ',
+      email: '  TEST\0@EXAMPLE.COM  ',
+    });
+    expect(res.success).toBe(true);
+    expect(res.data?.full_name).toBe('Hacker Name');
+    expect(res.data?.email).toBe('test@example.com');
   });
 });

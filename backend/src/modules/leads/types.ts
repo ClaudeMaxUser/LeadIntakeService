@@ -17,6 +17,7 @@ export interface LeadModel {
 }
 
 export type { ActivityModel, ActivityType } from '../activities/types.js';
+export type { UpdateLeadInput } from './schemas.js';
 
 export interface GetLeadsQuery {
   page?: number;

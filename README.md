@@ -135,8 +135,8 @@ nvm use 22
 npm test
 ```
 
-- **Backend Tests (37 tests)**: Vitest + Supertest covering HMAC cryptographic verification, payload parsing, status transition rules, API authentication, error handling, input sanitization, and complete webhook ingestion lifecycle.
-- **Frontend Tests (20 tests)**: Vitest + React Testing Library covering UI components, status badges, pagination, table rendering, and audit activity timeline.
+- **Backend Tests (49 tests)**: Vitest + Supertest covering HMAC cryptographic verification, payload parsing, status transition rules, API authentication, error handling, input sanitization, lead updates, and complete webhook ingestion lifecycle.
+- **Frontend Tests (24 tests)**: Vitest + React Testing Library covering UI components, status badges, pagination, table rendering, inline lead editing, and audit activity timeline.
 
 ---
 
@@ -148,7 +148,7 @@ npm test
   - _Response_: 200 (echoes challenge) or 403 Forbidden.
 - `POST /webhook/meta-lead`
   - _Headers_: `X-Hub-Signature-256: sha256=<hex>`
-  - _Response_: `201 Created` (with lead) or `200 OK` (`{"status": "duplicate_ignored", "leadId": "..."}`).
+  - _Response_: `201 Created` (emits `LEAD_CREATED`) or `200 OK` (`{"status": "duplicate_ignored", "leadId": "..."}`).
 
 ### Dashboard Endpoints (Requires `Authorization: Bearer <API_KEY>`)
 
@@ -160,7 +160,10 @@ npm test
   - _Response_: `200 OK` with chronological audit timeline.
 - `PATCH /leads/:id/status`
   - _Body_: `{"status": "CONTACTED", "note": "Spoke on phone"}`
-  - _Response_: `200 OK` with updated lead.
+  - _Response_: `200 OK` with updated lead (emits `STATUS_CHANGED`).
+- `PATCH /leads/:id`
+  - _Body_: `{"full_name": "Jane Smith", "email": "jane.smith@example.com", "phone": "+1987654321"}`
+  - _Response_: `200 OK` with updated lead (emits `LEAD_UPDATED` with field diff metadata).
 
 ### Health Check
 

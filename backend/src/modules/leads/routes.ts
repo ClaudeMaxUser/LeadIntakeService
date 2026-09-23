@@ -22,3 +22,6 @@ leadsRouter.get('/:id/activities', (req, res, next) => leadsController.getLeadAc
 
 // PATCH /leads/:id/status (Update lead status)
 leadsRouter.patch('/:id/status', (req, res, next) => leadsController.updateLeadStatus(req, res, next));
+
+// PATCH /leads/:id (Update lead contact details)
+leadsRouter.patch('/:id', (req, res, next) => leadsController.updateLead(req, res, next));

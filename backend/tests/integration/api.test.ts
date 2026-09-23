@@ -142,6 +142,40 @@ describe('HTTP API & Webhook Endpoints (Integration)', () => {
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Invalid lead ID format. Expected a valid UUID.');
     });
+
+    it('returns 401 when Authorization header is missing on PATCH /leads/:id', async () => {
+      const res = await request(app)
+        .patch('/leads/11111111-1111-1111-1111-111111111111')
+        .send({ full_name: 'Test Name' });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 400 when updating details with non-UUID lead ID', async () => {
+      const res = await request(app)
+        .patch('/leads/invalid-uuid')
+        .set('Authorization', `Bearer ${config.API_KEY}`)
+        .send({ full_name: 'Test Name' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Invalid lead ID format. Expected a valid UUID.');
+    });
+
+    it('returns 400 when updating details with empty payload or unrecognized fields', async () => {
+      const resEmpty = await request(app)
+        .patch('/leads/11111111-1111-1111-1111-111111111111')
+        .set('Authorization', `Bearer ${config.API_KEY}`)
+        .send({});
+
+      expect(resEmpty.status).toBe(400);
+
+      const resStrict = await request(app)
+        .patch('/leads/11111111-1111-1111-1111-111111111111')
+        .set('Authorization', `Bearer ${config.API_KEY}`)
+        .send({ full_name: 'Valid Name', malicious_column: 'DROP TABLE' });
+
+      expect(resStrict.status).toBe(400);
+    });
   });
 
   describe('404 Fallback Handling', () => {

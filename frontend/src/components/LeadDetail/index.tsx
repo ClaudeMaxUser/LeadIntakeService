@@ -13,6 +13,9 @@ interface LeadDetailProps {
   onUpdateStatus: (newStatus: LeadStatus, note?: string) => Promise<void>;
   updatingStatus: boolean;
   updateError: string | null;
+  onUpdateLead?: (updates: { full_name?: string; email?: string | null; phone?: string | null }) => Promise<void>;
+  updatingLead?: boolean;
+  leadUpdateError?: string | null;
   onRefreshActivities: () => void;
 }
 
@@ -32,12 +35,22 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
   onUpdateStatus,
   updatingStatus,
   updateError,
+  onUpdateLead,
+  updatingLead = false,
+  leadUpdateError = null,
   onRefreshActivities,
 }) => {
   const [selectedStatus, setSelectedStatus] = useState<LeadStatus>(lead.status);
   const [statusNote, setStatusNote] = useState<string>('');
   const [isConfirming, setIsConfirming] = useState<boolean>(false);
   const [rawOpen, setRawOpen] = useState<boolean>(false);
+
+  // Edit Lead Profile state
+  const [isEditingLead, setIsEditingLead] = useState<boolean>(false);
+  const [editName, setEditName] = useState<string>(lead.full_name);
+  const [editEmail, setEditEmail] = useState<string>(lead.email || '');
+  const [editPhone, setEditPhone] = useState<string>(lead.phone || '');
+  const [formValidationError, setFormValidationError] = useState<string | null>(null);
 
   const allowedNext = AllowedTransitions[lead.status] || [];
   const isTerminal = allowedNext.length === 0;
@@ -49,6 +62,53 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
     await onUpdateStatus(selectedStatus, statusNote.trim() || undefined);
     setIsConfirming(false);
     setStatusNote('');
+  };
+
+  const startEditing = () => {
+    setEditName(lead.full_name);
+    setEditEmail(lead.email || '');
+    setEditPhone(lead.phone || '');
+    setFormValidationError(null);
+    setIsEditingLead(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditingLead(false);
+    setFormValidationError(null);
+  };
+
+  const handleLeadEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormValidationError(null);
+    const trimmedName = editName.trim();
+    const trimmedEmail = editEmail.trim();
+    const trimmedPhone = editPhone.trim();
+
+    if (!trimmedName) {
+      setFormValidationError('Full name is required.');
+      return;
+    }
+    if (!trimmedEmail && !trimmedPhone) {
+      setFormValidationError('At least one contact method (email or phone) is required.');
+      return;
+    }
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setFormValidationError('Please enter a valid email address.');
+      return;
+    }
+
+    if (onUpdateLead) {
+      try {
+        await onUpdateLead({
+          full_name: trimmedName,
+          email: trimmedEmail || null,
+          phone: trimmedPhone || null,
+        });
+        setIsEditingLead(false);
+      } catch {
+        // leadUpdateError prop handles server error display
+      }
+    }
   };
 
   return (
@@ -66,50 +126,127 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                 ID: {lead.id}
               </span>
             </div>
-            <StatusBadge status={lead.status} />
-          </div>
-
-          <div className={styles.infoGrid}>
-            <div>
-              <div className={styles.fieldLabel}>Email Address</div>
-              <div className={styles.fieldValue}>{lead.email || '—'}</div>
-            </div>
-
-            <div>
-              <div className={styles.fieldLabel}>Phone Number</div>
-              <div className={styles.fieldValue}>{lead.phone || '—'}</div>
-            </div>
-
-            <div>
-              <div className={styles.fieldLabel}>Source</div>
-              <div className={styles.fieldValue}>{lead.source}</div>
-            </div>
-
-            <div>
-              <div className={styles.fieldLabel}>Meta Lead ID (leadgen_id)</div>
-              <div className={styles.fieldValue}>{lead.external_lead_id || '—'}</div>
-            </div>
-
-            <div>
-              <div className={styles.fieldLabel}>Page ID</div>
-              <div className={styles.fieldValue}>{lead.page_id || '—'}</div>
-            </div>
-
-            <div>
-              <div className={styles.fieldLabel}>Form ID</div>
-              <div className={styles.fieldValue}>{lead.form_id || '—'}</div>
-            </div>
-
-            <div>
-              <div className={styles.fieldLabel}>Ad ID</div>
-              <div className={styles.fieldValue}>{lead.ad_id || '—'}</div>
-            </div>
-
-            <div>
-              <div className={styles.fieldLabel}>Created At</div>
-              <div className={styles.fieldValue}>{formatDateTime(lead.created_at)}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <StatusBadge status={lead.status} />
+              {!isEditingLead && onUpdateLead && (
+                <button
+                  type="button"
+                  onClick={startEditing}
+                  className={styles.btnEdit}
+                  title="Edit lead contact details"
+                >
+                  ✏️ Edit Details
+                </button>
+              )}
             </div>
           </div>
+
+          {(leadUpdateError || formValidationError) && isEditingLead && (
+            <div className={styles.errorMessage}>
+              ⚠️ {formValidationError || leadUpdateError}
+            </div>
+          )}
+
+          {isEditingLead ? (
+            <form onSubmit={handleLeadEditSubmit} className={styles.editForm}>
+              <div>
+                <label className={styles.fieldLabel}>Full Name *</label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  disabled={updatingLead}
+                  className={styles.textInput}
+                  placeholder="e.g. Jane Doe"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className={styles.fieldLabel}>Email Address</label>
+                <input
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  disabled={updatingLead}
+                  className={styles.textInput}
+                  placeholder="e.g. jane@example.com"
+                />
+              </div>
+
+              <div>
+                <label className={styles.fieldLabel}>Phone Number</label>
+                <input
+                  type="text"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  disabled={updatingLead}
+                  className={styles.textInput}
+                  placeholder="e.g. +1234567890"
+                />
+              </div>
+
+              <div className={styles.editActions}>
+                <button
+                  type="submit"
+                  disabled={updatingLead}
+                  className={styles.btnSuccess}
+                >
+                  {updatingLead ? 'Saving Changes...' : 'Save Changes'}
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelEditing}
+                  disabled={updatingLead}
+                  className={styles.btnSecondary}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className={styles.infoGrid}>
+              <div>
+                <div className={styles.fieldLabel}>Email Address</div>
+                <div className={styles.fieldValue}>{lead.email || '—'}</div>
+              </div>
+
+              <div>
+                <div className={styles.fieldLabel}>Phone Number</div>
+                <div className={styles.fieldValue}>{lead.phone || '—'}</div>
+              </div>
+
+              <div>
+                <div className={styles.fieldLabel}>Source</div>
+                <div className={styles.fieldValue}>{lead.source}</div>
+              </div>
+
+              <div>
+                <div className={styles.fieldLabel}>Meta Lead ID (leadgen_id)</div>
+                <div className={styles.fieldValue}>{lead.external_lead_id || '—'}</div>
+              </div>
+
+              <div>
+                <div className={styles.fieldLabel}>Page ID</div>
+                <div className={styles.fieldValue}>{lead.page_id || '—'}</div>
+              </div>
+
+              <div>
+                <div className={styles.fieldLabel}>Form ID</div>
+                <div className={styles.fieldValue}>{lead.form_id || '—'}</div>
+              </div>
+
+              <div>
+                <div className={styles.fieldLabel}>Ad ID</div>
+                <div className={styles.fieldValue}>{lead.ad_id || '—'}</div>
+              </div>
+
+              <div>
+                <div className={styles.fieldLabel}>Created At</div>
+                <div className={styles.fieldValue}>{formatDateTime(lead.created_at)}</div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Status Transition Control Card */}

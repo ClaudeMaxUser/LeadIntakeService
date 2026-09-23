@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { AppError } from '../../middleware/errorHandler.js';
 import { activitiesService } from '../activities/service.js';
-import { UpdateLeadStatusSchema } from './schemas.js';
+import { UpdateLeadSchema, UpdateLeadStatusSchema } from './schemas.js';
 import { leadsService } from './service.js';
 
 const UUIDSchema = z.string().uuid('Invalid lead ID format. Expected a valid UUID.');
@@ -66,6 +66,29 @@ export class LeadsController {
 
       const { status, note } = bodyValidation.data;
       const updated = await leadsService.updateLeadStatus(req.params.id, status, note, 'user:dashboard');
+      res.status(200).json(updated);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async updateLead(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const idValidation = UUIDSchema.safeParse(req.params.id);
+      if (!idValidation.success) {
+        throw new AppError(idValidation.error.issues[0].message, 400);
+      }
+
+      const bodyValidation = UpdateLeadSchema.safeParse(req.body);
+      if (!bodyValidation.success) {
+        res.status(400).json({
+          error: 'Validation Error',
+          issues: bodyValidation.error.issues,
+        });
+        return;
+      }
+
+      const updated = await leadsService.updateLead(req.params.id, bodyValidation.data, 'user:dashboard');
       res.status(200).json(updated);
     } catch (err) {
       next(err);
