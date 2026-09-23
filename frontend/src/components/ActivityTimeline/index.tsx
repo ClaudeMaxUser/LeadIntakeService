@@ -1,9 +1,9 @@
-import React from 'react';
-import { Activity, ActivityType } from '../../types/index.js';
-import { formatDateTime } from '../../utils/format.js';
-import { Loading } from '../common/Loading.js';
-import { ErrorState } from '../common/ErrorState.js';
-import styles from './ActivityTimeline.module.css';
+import React from "react";
+import { Activity, ActivityType } from "../../types/index.js";
+import { formatDateTime } from "../../utils/format.js";
+import { Loading } from "../common/Loading.js";
+import { ErrorState } from "../common/ErrorState.js";
+import styles from "./ActivityTimeline.module.css";
 
 interface ActivityTimelineProps {
   activities: Activity[];
@@ -17,24 +17,24 @@ const activityConfig: Record<
   { icon: string; color: string; bg: string }
 > = {
   LEAD_CREATED: {
-    icon: '✨',
-    color: '#2563eb',
-    bg: '#eff6ff',
+    icon: "✨",
+    color: "#2563eb",
+    bg: "#eff6ff",
   },
   LEAD_UPDATED: {
-    icon: '📝',
-    color: '#0284c7',
-    bg: '#f0f9ff',
+    icon: "📝",
+    color: "#0284c7",
+    bg: "#f0f9ff",
   },
   STATUS_CHANGED: {
-    icon: '🔄',
-    color: '#059669',
-    bg: '#ecfdf5',
+    icon: "🔄",
+    color: "#059669",
+    bg: "#ecfdf5",
   },
   DUPLICATE_IGNORED: {
-    icon: '🛡️',
-    color: '#d97706',
-    bg: '#fffbeb',
+    icon: "🛡️",
+    color: "#d97706",
+    bg: "#fffbeb",
   },
 };
 
@@ -63,9 +63,9 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
       <div className={styles.timelineList}>
         {activities.map((item) => {
           const cfg = activityConfig[item.type] || {
-            icon: '📌',
-            color: '#475569',
-            bg: '#f1f5f9',
+            icon: "📌",
+            color: "#475569",
+            bg: "#f1f5f9",
           };
 
           return (
@@ -88,27 +88,28 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
                     className={styles.activityTypeTag}
                     style={{ color: cfg.color }}
                   >
-                    {item.type.replace('_', ' ')}
+                    {item.type.replace("_", " ")}
                   </span>
                   <span className={styles.timestamp}>
                     {formatDateTime(item.created_at)}
                   </span>
                 </div>
 
-                <p className={styles.description}>
-                  {item.description}
-                </p>
+                <p className={styles.description}>{item.description}</p>
 
                 <div className={styles.metaRow}>
                   <span>
-                    Actor: <strong className={styles.actor}>{item.actor}</strong>
+                    Actor:{" "}
+                    <strong className={styles.actor}>{item.actor}</strong>
                   </span>
                   <span className={styles.seq}>Seq #{item.id}</span>
                 </div>
 
                 {item.metadata && (
                   <details className={styles.metadataDetails}>
-                    <summary className={styles.metadataSummary}>Metadata Details</summary>
+                    <summary className={styles.metadataSummary}>
+                      Metadata Details
+                    </summary>
                     <pre className={styles.metadataPre}>
                       {JSON.stringify(item.metadata, null, 2)}
                     </pre>
