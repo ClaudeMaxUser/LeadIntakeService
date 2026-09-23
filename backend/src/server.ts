@@ -16,8 +16,8 @@ async function bootstrap() {
     }
   }
 
-  const server = app.listen(config.PORT, () => {
-    console.log(`🚀 Lead Intake Backend listening on port ${config.PORT} [${config.NODE_ENV}]`);
+  const server = app.listen(config.PORT, '0.0.0.0', () => {
+    console.log(`🚀 Lead Intake Backend listening on 0.0.0.0:${config.PORT} [${config.NODE_ENV}]`);
   });
 
   // Graceful shutdown handling

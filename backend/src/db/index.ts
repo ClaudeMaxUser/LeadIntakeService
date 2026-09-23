@@ -3,11 +3,17 @@ import { config } from '../config/index.js';
 
 const { Pool } = pg;
 
+const isRemotePostgres =
+  config.DATABASE_URL.includes('railway') ||
+  config.DATABASE_URL.includes('sslmode=require') ||
+  (config.NODE_ENV === 'production' && !config.DATABASE_URL.includes('@postgres:') && !config.DATABASE_URL.includes('localhost'));
+
 export const pool = new Pool({
   connectionString: config.DATABASE_URL,
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  connectionTimeoutMillis: 10000,
+  ssl: isRemotePostgres ? { rejectUnauthorized: false } : undefined,
 });
 
 pool.on('error', (err) => {
