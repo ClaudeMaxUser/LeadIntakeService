@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { config } from '../config/index.js';
 
 export function apiKeyAuth(req: Request, res: Response, next: NextFunction): void {
@@ -22,7 +23,10 @@ export function apiKeyAuth(req: Request, res: Response, next: NextFunction): voi
   }
 
   const token = parts[1];
-  if (token !== config.API_KEY) {
+  const tokenHash = crypto.createHash('sha256').update(token).digest();
+  const expectedHash = crypto.createHash('sha256').update(config.API_KEY).digest();
+
+  if (!crypto.timingSafeEqual(tokenHash as any, expectedHash as any)) {
     res.status(401).json({
       error: 'Unauthorized',
       message: 'Invalid API Key',

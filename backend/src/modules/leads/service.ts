@@ -5,7 +5,7 @@ import { AllowedTransitions, GetLeadsQuerySchema, isValidTransition } from './sc
 import { GetLeadsQuery, LeadModel, PaginatedResult } from './types.js';
 
 export class LeadsService {
-  async getLeads(rawQuery: GetLeadsQuery): Promise<PaginatedResult<LeadModel>> {
+  async getLeads(rawQuery: unknown): Promise<PaginatedResult<LeadModel>> {
     const parsed = GetLeadsQuerySchema.parse(rawQuery);
     const { page, limit, status, search, sortBy, sortOrder } = parsed;
     const offset = (page - 1) * limit;

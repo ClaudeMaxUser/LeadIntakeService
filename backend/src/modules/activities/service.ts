@@ -1,14 +1,8 @@
 import pg from 'pg';
 import { query } from '../../db/index.js';
-import { ActivityModel } from '../leads/types.js';
+import { ActivityModel, CreateActivityInput } from './types.js';
 
-export interface CreateActivityInput {
-  leadId: string;
-  type: 'LEAD_CREATED' | 'LEAD_UPDATED' | 'STATUS_CHANGED' | 'DUPLICATE_IGNORED';
-  description: string;
-  metadata?: Record<string, any> | null;
-  actor: 'system:webhook' | 'user:dashboard';
-}
+export { CreateActivityInput };
 
 export class ActivitiesService {
   /**
@@ -21,8 +15,8 @@ export class ActivitiesService {
     const sql = `
       INSERT INTO activities (lead_id, type, description, metadata, actor)
       VALUES ($1, $2, $3, $4, $5)
-      RETURNS id, lead_id, type, description, metadata, actor, created_at
-    `.replace('RETURNS', 'RETURNING');
+      RETURNING id, lead_id, type, description, metadata, actor, created_at
+    `;
 
     const params = [
       input.leadId,

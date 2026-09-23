@@ -16,15 +16,7 @@ export interface LeadModel {
   updated_at: Date;
 }
 
-export interface ActivityModel {
-  id: number;
-  lead_id: string;
-  type: 'LEAD_CREATED' | 'LEAD_UPDATED' | 'STATUS_CHANGED' | 'DUPLICATE_IGNORED';
-  description: string;
-  metadata: Record<string, any> | null;
-  actor: string;
-  created_at: Date;
-}
+export type { ActivityModel, ActivityType } from '../activities/types.js';
 
 export interface GetLeadsQuery {
   page?: number;

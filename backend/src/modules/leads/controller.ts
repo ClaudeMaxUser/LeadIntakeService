@@ -10,7 +10,7 @@ const UUIDSchema = z.string().uuid('Invalid lead ID format. Expected a valid UUI
 export class LeadsController {
   async getLeads(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const result = await leadsService.getLeads(req.query as any);
+      const result = await leadsService.getLeads(req.query);
       res.status(200).json(result);
     } catch (err) {
       next(err);

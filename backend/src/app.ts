@@ -52,7 +52,8 @@ export function createApp(): Express {
     });
   });
 
-  // Module routes
+  // Module routes mapped directly to required contract:
+  // POST /webhook/meta-lead, GET /leads, GET /leads/:id, PATCH /leads/:id/status
   app.use('/webhook', webhookRouter);
   app.use('/leads', leadsRouter);
 
