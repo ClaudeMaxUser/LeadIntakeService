@@ -19,7 +19,7 @@ export function verifyMetaSignature(
   const payloadBuffer = typeof rawBody === 'string' ? Buffer.from(rawBody, 'utf-8') : rawBody;
 
   const hmac = crypto.createHmac('sha256', appSecret);
-  hmac.update(payloadBuffer);
+  hmac.update(payloadBuffer as any);
   const actualSignatureHex = hmac.digest('hex');
 
   const expectedBuffer = Buffer.from(expectedSignatureHex, 'hex');
@@ -29,5 +29,5 @@ export function verifyMetaSignature(
     return false;
   }
 
-  return crypto.timingSafeEqual(expectedBuffer, actualBuffer);
+  return crypto.timingSafeEqual(expectedBuffer as any, actualBuffer as any);
 }
