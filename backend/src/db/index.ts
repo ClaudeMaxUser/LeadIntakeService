@@ -3,17 +3,38 @@ import { config } from '../config/index.js';
 
 const { Pool } = pg;
 
-const isRemotePostgres =
-  config.DATABASE_URL.includes('railway') ||
-  config.DATABASE_URL.includes('sslmode=require') ||
-  (config.NODE_ENV === 'production' && !config.DATABASE_URL.includes('@postgres:') && !config.DATABASE_URL.includes('localhost'));
+function getSslConfig() {
+  const url = config.DATABASE_URL.toLowerCase();
+  // Railway internal private network (.railway.internal) and local docker/localhost do NOT use SSL
+  if (
+    url.includes('.railway.internal') ||
+    url.includes('@postgres:') ||
+    url.includes('@postgres') ||
+    url.includes('localhost') ||
+    url.includes('127.0.0.1') ||
+    url.includes('sslmode=disable')
+  ) {
+    return undefined;
+  }
+  // Remote / Public cloud databases (e.g. rlwy.net public proxy, Supabase, Neon, AWS)
+  if (
+    url.includes('sslmode=require') ||
+    url.includes('rlwy.net') ||
+    url.includes('supabase') ||
+    url.includes('neon.tech') ||
+    url.includes('render.com')
+  ) {
+    return { rejectUnauthorized: false };
+  }
+  return undefined;
+}
 
 export const pool = new Pool({
   connectionString: config.DATABASE_URL,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
-  ssl: isRemotePostgres ? { rejectUnauthorized: false } : undefined,
+  ssl: getSslConfig(),
 });
 
 pool.on('error', (err) => {
