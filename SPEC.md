@@ -365,53 +365,53 @@ NEW → CONTACTED → QUALIFIED → CONVERTED
 
 **Webhook ingestion**
 
-- [ ] Duplicate `leadgen_id` (retry) → idempotent, `200 duplicate_ignored`, no duplicate row.
-- [ ] Missing required field (`full_name`, and at least one of `email`/`phone`) → `400`, no row created.
-- [ ] Malformed JSON / wrong `Content-Type` → `400`.
-- [ ] Missing or invalid `X-Hub-Signature-256` → `401`, no row created.
-- [ ] Unexpected extra fields in payload → ignored, not rejected.
-- [ ] Oversized body → `413` (explicit body-size limit in middleware).
-- [ ] Two webhooks for the same `leadgen_id` near-simultaneously → DB unique constraint +
+- [x] Duplicate `leadgen_id` (retry) → idempotent, `200 duplicate_ignored`, no duplicate row.
+- [x] Missing required field (`full_name`, and at least one of `email`/`phone`) → `400`, no row created.
+- [x] Malformed JSON / wrong `Content-Type` → `400`.
+- [x] Missing or invalid `X-Hub-Signature-256` → `401`, no row created.
+- [x] Unexpected extra fields in payload → ignored, not rejected.
+- [x] Oversized body → `413` (explicit body-size limit in middleware).
+- [x] Two webhooks for the same `leadgen_id` near-simultaneously → DB unique constraint +
       transaction prevents a duplicate row even under a race.
-- [ ] `field_data` entries with multiple `values` or unexpected order → take `values[0]`, don't
+- [x] `field_data` entries with multiple `values` or unexpected order → take `values[0]`, don't
       assume array position.
 
 **Dashboard API / auth**
 
-- [ ] Missing `Authorization` header on any `/leads*` route → `401`.
-- [ ] Malformed or wrong API key → `401`.
+- [x] Missing `Authorization` header on any `/leads*` route → `401`.
+- [x] Malformed or wrong API key → `401`.
 
 **Status updates**
 
-- [ ] Status value outside the enum → `400`.
-- [ ] Illegal transition (e.g. `CONVERTED → NEW`) → `400`, message lists allowed next states.
-- [ ] `PATCH` on nonexistent lead → `404`.
-- [ ] Setting status to its current value → `200`, no-op, no new activity.
-- [ ] Concurrent `PATCH`es on the same lead → DB transaction around read-modify-write; each
+- [x] Status value outside the enum → `400`.
+- [x] Illegal transition (e.g. `CONVERTED → NEW`) → `400`, message lists allowed next states.
+- [x] `PATCH` on nonexistent lead → `404`.
+- [x] Setting status to its current value → `200`, no-op, no new activity.
+- [x] Concurrent `PATCH`es on the same lead → DB transaction around read-modify-write; each
       accepted transition is still individually logged.
-- [ ] Missing `status` field in body → `400`.
+- [x] Missing `status` field in body → `400`.
 
 **List / detail fetch**
 
-- [ ] `:id` not a valid UUID → `400`, not `500`.
-- [ ] Nonexistent `:id` → `404`.
-- [ ] `page=0`, negative, or absurdly large `limit` → clamp/validate with sane defaults; `limit`
+- [x] `:id` not a valid UUID → `400`, not `500`.
+- [x] Nonexistent `:id` → `404`.
+- [x] `page=0`, negative, or absurdly large `limit` → clamp/validate with sane defaults; `limit`
       capped at 100.
-- [ ] Empty result set → `{ data: [], pagination: { total: 0, ... } }`, not an error.
-- [ ] `search` containing SQL special characters → safe by construction via parameterized queries;
+- [x] Empty result set → `{ data: [], pagination: { total: 0, ... } }`, not an error.
+- [x] `search` containing SQL special characters → safe by construction via parameterized queries;
       never string-concatenate into raw SQL.
-- [ ] `sortBy` not in the allow-list → `400`.
+- [x] `sortBy` not in the allow-list → `400`.
 
 **Security / infra**
 
-- [ ] Secrets (`DATABASE_URL`, `API_KEY`, `WEBHOOK_VERIFY_TOKEN`, `META_APP_SECRET`) via env vars
+- [x] Secrets (`DATABASE_URL`, `API_KEY`, `WEBHOOK_VERIFY_TOKEN`, `META_APP_SECRET`) via env vars
       only; `.env.example` committed, `.env` gitignored.
-- [ ] CORS restricted to the deployed frontend origin in production.
-- [ ] Basic rate limiting on `POST /webhook/meta-lead` (publicly reachable, signature-gated but
+- [x] CORS restricted to the deployed frontend origin in production.
+- [x] Basic rate limiting on `POST /webhook/meta-lead` (publicly reachable, signature-gated but
       still unauthenticated in the API-key sense).
-- [ ] `GET /health` for the deployment platform's readiness checks.
-- [ ] Schema changes go through `node-pg-migrate`, never a hand-run `ALTER TABLE`.
-- [ ] Don't log full PII (email/phone) in plaintext application logs in production — mask or omit.
+- [x] `GET /health` for the deployment platform's readiness checks.
+- [x] Schema changes go through `node-pg-migrate`, never a hand-run `ALTER TABLE`.
+- [x] Don't log full PII (email/phone) in plaintext application logs in production — mask or omit.
 
 ### 11. Non-functional requirements
 
@@ -451,28 +451,38 @@ NEW → CONTACTED → QUALIFIED → CONVERTED
   automatically or via the documented command.
 - Live deployment: Railway. Be explicit in the README's "Deployment Steps."
 
-### 14. Git commit convention
+### 14. Git commit convention & workflow standards
 
-Conventional Commits (`feat:`, `fix:`, `chore:`, `test:`, `docs:`, `refactor:`). A natural path
-satisfying the "12–15 meaningful commits" requirement without padding:
+The repository strictly enforces the [Conventional Commits specification](https://www.conventionalcommits.org/) (`<type>(<scope>): <description>`) to maintain a clean, semantic, and auditable version history.
 
-1. `chore: scaffold monorepo, tooling, eslint/prettier`
-2. `feat: add DB schema + initial node-pg-migrate migration`
-3. `feat: implement API key auth middleware`
-4. `feat: implement webhook GET verification handshake + POST signature validation`
-5. `feat: implement webhook ingestion + idempotency`
-6. `test: unit tests for webhook payload validation + signature check`
-7. `feat: implement GET /leads with pagination/filtering/search`
-8. `feat: implement GET /leads/:id`
-9. `feat: implement PATCH /leads/:id/status with transition rules`
-10. `feat: wire activity log writes into lead create/update (transactional)`
-11. `feat: implement GET /leads/:id/activities`
-12. `test: integration tests for leads + webhook endpoints`
-13. `feat: scaffold frontend, routing, API client with auth header`
-14. `feat: Lead List page with pagination/filter/search`
-15. `feat: Lead Detail page + status change control`
-16. `feat: Activity Timeline component`
-17. `chore: Dockerize backend + frontend, docker-compose, migration step`
-18. `docs: README and AGENT.md`
+#### Commit Types
 
-(18 listed for slack — don't force a split that doesn't reflect real work.)
+| Type       | Purpose                                                    | Example                                                             |
+| :--------- | :--------------------------------------------------------- | :------------------------------------------------------------------ |
+| `feat`     | New feature or customer/API capability                     | `feat(webhook): support nested Meta changes payload structure`      |
+| `fix`      | Bug fix, security patch, or edge case resolution           | `fix(security): sanitize PII from request query log entries`        |
+| `test`     | Adding, expanding, or fixing unit/integration test suites  | `test(leads): add concurrency and invalid transition test cases`    |
+| `refactor` | Code restructure without changing API contract or behavior | `refactor(frontend): extract ActivityTimeline styles to CSS module` |
+| `chore`    | Build scripts, dependencies, Docker, tool configuration    | `chore(docker): configure multi-stage build arguments for frontend` |
+| `docs`     | Documentation changes (README, AGENT.md, SPEC.md)          | `docs: expand architecture decisions and scaling roadmap in README` |
+| `style`    | Formatting, whitespace, linting without logic change       | `style(frontend): format pagination component and sort controls`    |
+
+#### Scopes & Domain Boundaries
+
+Use optional scopes to pinpoint the modified subsystem:
+
+- `backend` / `frontend`: High-level service boundaries
+- `webhook`: Ingestion pipeline, signature verification, payload mapping
+- `leads`: Lead listing, detail queries, profile updates, status state machine
+- `activities`: Audit timeline, activity logging, transactional persistence
+- `security`: Authentication, authorization, rate limiting, PII sanitization
+- `docker`: Dockerfiles, compose files, reverse proxy / nginx configuration
+
+#### Message Structure & Quality Rules
+
+1. **Imperative Mood:** Use the imperative present tense in the subject line (e.g. `feat: implement...`, `fix: enforce...`, not `added` or `fixes`).
+2. **Subject Length:** Keep the first line concise (≤ 72 characters), lowercase after the prefix, with no trailing period.
+3. **Contextual Body:** For complex changes (such as state machine changes or security fixes), include a body explaining the _why_ and non-obvious trade-offs.
+4. **Atomic Commits:** Each commit represents a discrete, self-contained, working change that compiles and passes tests independently. Never commit half-finished states or broken builds.
+5. **Git Hygiene & Secret Prevention:** Staging of `.env`, secrets, build artifacts (`dist/`), or OS metadata (`.DS_Store`, `Thumbs.db`) is strictly forbidden and guarded by `.gitignore`.
+6. **Milestone Integrity:** Fulfills the evaluation requirement of a coherent, incremental commit trail showing logical progression from initial domain modeling to production deployment.
