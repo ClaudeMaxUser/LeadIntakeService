@@ -136,7 +136,7 @@ npm test
 ```
 
 - **Backend Tests (37 tests)**: Vitest + Supertest covering HMAC cryptographic verification, payload parsing, status transition rules, API authentication, error handling, input sanitization, and complete webhook ingestion lifecycle.
-- **Frontend Tests (16 tests)**: Vitest + React Testing Library covering UI components, status badges, pagination, and table rendering.
+- **Frontend Tests (20 tests)**: Vitest + React Testing Library covering UI components, status badges, pagination, table rendering, and audit activity timeline.
 
 ---
 

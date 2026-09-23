@@ -1,7 +1,9 @@
 import React from 'react';
 import { Activity, ActivityType } from '../../types/index.js';
+import { formatDateTime } from '../../utils/format.js';
 import { Loading } from '../common/Loading.js';
 import { ErrorState } from '../common/ErrorState.js';
+import styles from './ActivityTimeline.module.css';
 
 interface ActivityTimelineProps {
   activities: Activity[];
@@ -42,43 +44,23 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
   error,
   onRetry,
 }) => {
-  const formatDate = (iso: string) => {
-    try {
-      return new Date(iso).toLocaleString('en-US', {
-        dateStyle: 'medium',
-        timeStyle: 'medium',
-      });
-    } catch {
-      return iso;
-    }
-  };
-
   if (loading) return <Loading message="Loading audit timeline..." />;
   if (error) return <ErrorState message={error} onRetry={onRetry} />;
 
   if (activities.length === 0) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+      <div className={styles.emptyState}>
         No activities recorded yet for this lead.
       </div>
     );
   }
 
   return (
-    <div style={{ position: 'relative', paddingLeft: '1.5rem' }}>
+    <div className={styles.timelineWrapper}>
       {/* Vertical line connecting entries */}
-      <div
-        style={{
-          position: 'absolute',
-          left: '19px',
-          top: '15px',
-          bottom: '15px',
-          width: '2px',
-          backgroundColor: '#e2e8f0',
-        }}
-      />
+      <div className={styles.connectingLine} />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div className={styles.timelineList}>
         {activities.map((item) => {
           const cfg = activityConfig[item.type] || {
             icon: '📌',
@@ -87,100 +69,47 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
           };
 
           return (
-            <div
-              key={item.id}
-              style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '1rem',
-              }}
-            >
+            <div key={item.id} className={styles.timelineItem}>
               {/* Icon badge */}
               <div
+                className={styles.badge}
                 style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '50%',
                   backgroundColor: cfg.bg,
                   border: `2px solid ${cfg.color}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1rem',
-                  zIndex: 2,
-                  flexShrink: 0,
                 }}
               >
                 {cfg.icon}
               </div>
 
               {/* Content Card */}
-              <div
-                style={{
-                  flex: 1,
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '0.5rem',
-                  padding: '0.85rem 1rem',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '0.25rem',
-                  }}
-                >
+              <div className={styles.contentCard}>
+                <div className={styles.cardHeader}>
                   <span
-                    style={{
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      color: cfg.color,
-                      letterSpacing: '0.05em',
-                      textTransform: 'uppercase',
-                    }}
+                    className={styles.activityTypeTag}
+                    style={{ color: cfg.color }}
                   >
                     {item.type.replace('_', ' ')}
                   </span>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                    {formatDate(item.created_at)}
+                  <span className={styles.timestamp}>
+                    {formatDateTime(item.created_at)}
                   </span>
                 </div>
 
-                <p style={{ fontSize: '0.875rem', color: '#1e293b', fontWeight: 500, margin: '0.25rem 0' }}>
+                <p className={styles.description}>
                   {item.description}
                 </p>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginTop: '0.4rem',
-                    fontSize: '0.75rem',
-                    color: '#64748b',
-                  }}
-                >
-                  <span>Actor: <strong style={{ color: '#475569' }}>{item.actor}</strong></span>
-                  <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Seq #{item.id}</span>
+                <div className={styles.metaRow}>
+                  <span>
+                    Actor: <strong className={styles.actor}>{item.actor}</strong>
+                  </span>
+                  <span className={styles.seq}>Seq #{item.id}</span>
                 </div>
 
                 {item.metadata && (
-                  <details style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#64748b' }}>
-                    <summary style={{ cursor: 'pointer', userSelect: 'none' }}>Metadata Details</summary>
-                    <pre
-                      style={{
-                        backgroundColor: '#f8fafc',
-                        padding: '0.5rem',
-                        borderRadius: '0.25rem',
-                        marginTop: '0.25rem',
-                        overflowX: 'auto',
-                        fontSize: '0.7rem',
-                      }}
-                    >
+                  <details className={styles.metadataDetails}>
+                    <summary className={styles.metadataSummary}>Metadata Details</summary>
+                    <pre className={styles.metadataPre}>
                       {JSON.stringify(item.metadata, null, 2)}
                     </pre>
                   </details>
@@ -193,4 +122,3 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     </div>
   );
 };
-
