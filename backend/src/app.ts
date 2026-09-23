@@ -56,6 +56,14 @@ export function createApp(): Express {
   app.use('/webhook', webhookRouter);
   app.use('/leads', leadsRouter);
 
+  // 404 JSON fallback for unmatched routes
+  app.use((req: Request, res: Response) => {
+    res.status(404).json({
+      error: 'Not Found',
+      message: `Cannot ${req.method} ${req.originalUrl}`,
+    });
+  });
+
   // Central error handling
   app.use(errorHandler);
 

@@ -20,8 +20,10 @@ export class LeadsService {
     }
 
     if (search) {
+      // Escape SQL ILIKE wildcard characters to treat them literally
+      const sanitizedSearch = search.replace(/[%_\\]/g, '\\$&');
       conditions.push(`(full_name ILIKE $${paramIndex} OR email ILIKE $${paramIndex} OR phone ILIKE $${paramIndex})`);
-      params.push(`%${search}%`);
+      params.push(`%${sanitizedSearch}%`);
       paramIndex++;
     }
 
