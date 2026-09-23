@@ -14,7 +14,8 @@
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "migrate:up": "npm run migrate:up --workspace=backend",
-    "migrate:down": "npm run migrate:down --workspace=backend"
+    "migrate:down": "npm run migrate:down --workspace=backend",
+    "seed": "npm run seed --workspace=backend"
   },
   "engines": {
     "node": ">=22.0.0"
@@ -28,5 +29,10 @@
     "postgresql"
   ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^22.5.5",
+    "cssstyle": "^6.2.0",
+    "jsdom": "^29.1.1"
+  }
 }
