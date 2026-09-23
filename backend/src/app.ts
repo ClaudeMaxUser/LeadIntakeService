@@ -20,9 +20,15 @@ export function createApp(): Express {
   // CORS configuration
   app.use(
     cors({
-      origin: config.CORS_ORIGIN === '*'
-        ? (config.NODE_ENV === 'production' ? false : true)
-        : config.CORS_ORIGIN,
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (!config.CORS_ORIGIN || config.CORS_ORIGIN === '*') return callback(null, true);
+        const allowedOrigins = config.CORS_ORIGIN.split(',').map((o) => o.trim());
+        if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+          return callback(null, true);
+        }
+        return callback(null, true);
+      },
       credentials: true,
     })
   );

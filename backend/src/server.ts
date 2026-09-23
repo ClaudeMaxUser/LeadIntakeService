@@ -6,18 +6,13 @@ import { runMigrations } from './db/migrate.js';
 async function bootstrap() {
   const app = createApp();
 
-  // Automatically apply database migrations on startup
-  try {
-    await runMigrations();
-  } catch (err: any) {
-    console.error('⚠️ Automatic database migration failed on boot:', err.message);
-    if (config.NODE_ENV === 'production') {
-      console.warn('Continuing boot process — please ensure migrations are run.');
-    }
-  }
-
   const server = app.listen(config.PORT, '0.0.0.0', () => {
     console.log(`🚀 Lead Intake Backend listening on 0.0.0.0:${config.PORT} [${config.NODE_ENV}]`);
+  });
+
+  // Automatically apply database migrations on startup in background
+  runMigrations().catch((err: any) => {
+    console.error('⚠️ Automatic database migration notice:', err.message);
   });
 
   // Graceful shutdown handling
