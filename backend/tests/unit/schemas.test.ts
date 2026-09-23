@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { extractLeadData, MetaWebhookPayloadSchema } from '../../src/modules/webhook/schemas.js';
+import { extractLeadData, MetaWebhookPayloadSchema, normalizeMetaPayload } from '../../src/modules/webhook/schemas.js';
 
 describe('Webhook Payload Parsing & Extraction', () => {
-  it('successfully parses and extracts lead data from valid Meta payload', () => {
+  it('successfully parses and extracts lead data from valid Meta payload (flat format)', () => {
     const validPayload = {
       leadgen_id: '1234567890',
       page_id: '111',
@@ -19,7 +19,10 @@ describe('Webhook Payload Parsing & Extraction', () => {
     const parseResult = MetaWebhookPayloadSchema.safeParse(validPayload);
     expect(parseResult.success).toBe(true);
 
-    const extraction = extractLeadData(parseResult.data!);
+    const normalized = normalizeMetaPayload(parseResult.data!);
+    expect(normalized).not.toBeNull();
+
+    const extraction = extractLeadData(normalized!);
     expect(extraction.missingFields).toBeUndefined();
     expect(extraction.data).toEqual({
       leadgen_id: '1234567890',
@@ -32,6 +35,46 @@ describe('Webhook Payload Parsing & Extraction', () => {
     });
   });
 
+  it('successfully parses and normalizes nested Meta webhook shape (entry/changes format)', () => {
+    const nestedPayload = {
+      object: 'page',
+      entry: [
+        {
+          id: '111',
+          time: 1440120384,
+          changes: [
+            {
+              field: 'leadgen',
+              value: {
+                leadgen_id: '9988776655',
+                page_id: '111',
+                form_id: '222',
+                ad_id: '333',
+                created_time: 1440120384,
+                field_data: [
+                  { name: 'FIRST_NAME', values: ['Alice'] },
+                  { name: 'LAST_NAME', values: ['Smith'] },
+                  { name: 'EMAIL', values: ['alice@example.com'] },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    const parseResult = MetaWebhookPayloadSchema.safeParse(nestedPayload);
+    expect(parseResult.success).toBe(true);
+
+    const normalized = normalizeMetaPayload(parseResult.data!);
+    expect(normalized).not.toBeNull();
+    expect(normalized?.leadgen_id).toBe('9988776655');
+
+    const extraction = extractLeadData(normalized!);
+    expect(extraction.data?.full_name).toBe('Alice Smith');
+    expect(extraction.data?.email).toBe('alice@example.com');
+  });
+
   it('allows extra payload fields without failing validation', () => {
     const payloadWithExtra = {
       leadgen_id: '12345',
@@ -42,7 +85,8 @@ describe('Webhook Payload Parsing & Extraction', () => {
     const parseResult = MetaWebhookPayloadSchema.safeParse(payloadWithExtra);
     expect(parseResult.success).toBe(true);
 
-    const extraction = extractLeadData(parseResult.data!);
+    const normalized = normalizeMetaPayload(parseResult.data!);
+    const extraction = extractLeadData(normalized!);
     expect(extraction.data?.full_name).toBe('John');
   });
 
@@ -55,7 +99,8 @@ describe('Webhook Payload Parsing & Extraction', () => {
     const parseResult = MetaWebhookPayloadSchema.safeParse(payloadWithoutName);
     expect(parseResult.success).toBe(true);
 
-    const extraction = extractLeadData(parseResult.data!);
+    const normalized = normalizeMetaPayload(parseResult.data!);
+    const extraction = extractLeadData(normalized!);
     expect(extraction.missingFields).toContain('full_name');
   });
 
@@ -68,7 +113,8 @@ describe('Webhook Payload Parsing & Extraction', () => {
     const parseResult = MetaWebhookPayloadSchema.safeParse(payloadWithoutContact);
     expect(parseResult.success).toBe(true);
 
-    const extraction = extractLeadData(parseResult.data!);
+    const normalized = normalizeMetaPayload(parseResult.data!);
+    const extraction = extractLeadData(normalized!);
     expect(extraction.missingFields).toContain('email or phone_number');
   });
 });

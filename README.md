@@ -20,10 +20,11 @@ A production-ready inbound lead intake service that ingests Meta Lead Ads webhoo
 │                                                                                       │
 │  ┌──────────────────────┐   ┌────────────────────────┐   ┌─────────────────────────┐  │
 │  │ Webhook Module       │   │ Leads Module           │   │ Activities Module       │  │
-│  │ • GET /webhook Handshake│ │ • GET /leads (Paged)   │   │ • GET /leads/:id/       │  │
-│  │ • HMAC Signature     │   │ • GET /leads/:id       │   │     activities          │  │
+│  │ • GET /webhook       │   │ • GET /leads (Paged)   │   │ • GET /leads/:id/       │  │
+│  │   Handshake          │   │                        │   │   activities            │  │   
+│  │ • HMAC Signature     │   │ • GET /leads/:id       │   │                         │  │
 │  │ • Defensive Mapper   │   │ • PATCH /leads/:id/    │   │ • Transactional Logging │  │
-│  │ • Idempotency Guard  │   │     status             │   │                         │  │
+│  │ • Idempotency Guard  │   │   status               │   │                         │  │
 │  └──────────┬───────────┘   └───────────┬────────────┘   └────────────┬────────────┘  │
 └─────────────┼───────────────────────────┼─────────────────────────────┼───────────────┘
               │                           │                             │

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { config } from '../../config/index.js';
-import { extractLeadData, MetaWebhookPayloadSchema } from './schemas.js';
+import { extractLeadData, MetaWebhookPayloadSchema, normalizeMetaPayload } from './schemas.js';
 import { webhookService } from './service.js';
 import { verifyMetaSignature } from './verifySignature.js';
 
@@ -52,8 +52,18 @@ export class WebhookController {
         return;
       }
 
+      // Normalize between flat payload and Meta entry[0].changes[0].value wrapper
+      const normalized = normalizeMetaPayload(parseResult.data);
+      if (!normalized) {
+        res.status(400).json({
+          error: 'Invalid Payload Format',
+          message: 'Could not extract leadgen_id from payload',
+        });
+        return;
+      }
+
       // Extract lead fields
-      const { data, missingFields } = extractLeadData(parseResult.data);
+      const { data, missingFields } = extractLeadData(normalized);
       if (missingFields && missingFields.length > 0) {
         res.status(400).json({
           error: 'Missing required lead fields',
@@ -63,7 +73,7 @@ export class WebhookController {
       }
 
       // Ingest lead
-      const result = await webhookService.processLeadWebhook(data!, parseResult.data);
+      const result = await webhookService.processLeadWebhook(data!, normalized);
 
       if (result.status === 'duplicate_ignored') {
         res.status(200).json({
