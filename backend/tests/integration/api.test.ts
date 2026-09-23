@@ -114,6 +114,45 @@ describe('HTTP API & Webhook Endpoints (Integration)', () => {
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Invalid lead ID format. Expected a valid UUID.');
     });
+
+    it('returns 400 when updating status with non-UUID lead ID', async () => {
+      const res = await request(app)
+        .patch('/leads/invalid-uuid/status')
+        .set('Authorization', `Bearer ${config.API_KEY}`)
+        .send({ status: 'CONTACTED' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Invalid lead ID format. Expected a valid UUID.');
+    });
+
+    it('returns 400 when updating lead with invalid status enum', async () => {
+      const res = await request(app)
+        .patch('/leads/11111111-1111-1111-1111-111111111111/status')
+        .set('Authorization', `Bearer ${config.API_KEY}`)
+        .send({ status: 'INVALID_STATUS_VALUE' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 400 when requesting activities for non-UUID lead ID', async () => {
+      const res = await request(app)
+        .get('/leads/invalid-uuid/activities')
+        .set('Authorization', `Bearer ${config.API_KEY}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Invalid lead ID format. Expected a valid UUID.');
+    });
+  });
+
+  describe('404 Fallback Handling', () => {
+    it('returns 404 JSON for unmatched routes', async () => {
+      const res = await request(app).get('/api/unmatched-endpoint');
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({
+        error: 'Not Found',
+        message: 'Cannot GET /api/unmatched-endpoint',
+      });
+    });
   });
 });
 
