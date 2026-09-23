@@ -16,6 +16,9 @@ export function verifyMetaSignature(
   }
 
   const expectedSignatureHex = parts[1];
+  if (!/^[0-9a-fA-F]{64}$/.test(expectedSignatureHex)) {
+    return false;
+  }
   const payloadBuffer = typeof rawBody === 'string' ? Buffer.from(rawBody, 'utf-8') : rawBody;
 
   const hmac = crypto.createHmac('sha256', appSecret);

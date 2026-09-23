@@ -21,7 +21,7 @@ A production-ready inbound lead intake service that ingests Meta Lead Ads webhoo
 │  ┌──────────────────────┐   ┌────────────────────────┐   ┌─────────────────────────┐  │
 │  │ Webhook Module       │   │ Leads Module           │   │ Activities Module       │  │
 │  │ • GET /webhook       │   │ • GET /leads (Paged)   │   │ • GET /leads/:id/       │  │
-│  │   Handshake          │   │                        │   │   activities            │  │   
+│  │   Handshake          │   │                        │   │   activities            │  │
 │  │ • HMAC Signature     │   │ • GET /leads/:id       │   │                         │  │
 │  │ • Defensive Mapper   │   │ • PATCH /leads/:id/    │   │ • Transactional Logging │  │
 │  │ • Idempotency Guard  │   │   status               │   │                         │  │
@@ -72,12 +72,14 @@ A production-ready inbound lead intake service that ingests Meta Lead Ads webhoo
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js >= 22.0.0
 - Docker & Docker Compose (or local PostgreSQL)
 
 ### 1. Environment Setup
 
 Copy sample environment files:
+
 ```bash
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
@@ -86,6 +88,7 @@ cp frontend/.env.example frontend/.env
 ### 2. Local Development with Docker Compose
 
 Run the entire system (Postgres, Backend API, and Frontend Dashboard):
+
 ```bash
 docker-compose up --build
 ```
@@ -97,22 +100,26 @@ docker-compose up --build
 ### 3. Local Development (Manual)
 
 Ensure Node 22 is active:
+
 ```bash
 nvm use 22
 npm install
 ```
 
 Start the backend:
+
 ```bash
 npm run dev:backend
 ```
 
 Start the frontend:
+
 ```bash
 npm run dev:frontend
 ```
 
 Run database migrations:
+
 ```bash
 npm run migrate:up
 ```
@@ -128,7 +135,7 @@ nvm use 22
 npm test
 ```
 
-- **Backend Tests (35 tests)**: Vitest + Supertest covering HMAC cryptographic verification, payload parsing, status transition rules, API authentication, error handling, and complete webhook ingestion lifecycle.
+- **Backend Tests (37 tests)**: Vitest + Supertest covering HMAC cryptographic verification, payload parsing, status transition rules, API authentication, error handling, input sanitization, and complete webhook ingestion lifecycle.
 - **Frontend Tests (16 tests)**: Vitest + React Testing Library covering UI components, status badges, pagination, and table rendering.
 
 ---
@@ -136,40 +143,43 @@ npm test
 ## API Reference
 
 ### Webhook Endpoints
+
 - `GET /webhook/meta-lead?hub.mode=subscribe&hub.verify_token=...&hub.challenge=...`
-  - *Response*: 200 (echoes challenge) or 403 Forbidden.
+  - _Response_: 200 (echoes challenge) or 403 Forbidden.
 - `POST /webhook/meta-lead`
-  - *Headers*: `X-Hub-Signature-256: sha256=<hex>`
-  - *Response*: `201 Created` (with lead) or `200 OK` (`{"status": "duplicate_ignored", "leadId": "..."}`).
+  - _Headers_: `X-Hub-Signature-256: sha256=<hex>`
+  - _Response_: `201 Created` (with lead) or `200 OK` (`{"status": "duplicate_ignored", "leadId": "..."}`).
 
 ### Dashboard Endpoints (Requires `Authorization: Bearer <API_KEY>`)
+
 - `GET /leads?page=1&limit=20&status=NEW&search=john&sortBy=createdAt&sortOrder=desc`
-  - *Response*: `200 OK` with paginated lead list.
+  - _Response_: `200 OK` with paginated lead list.
 - `GET /leads/:id`
-  - *Response*: `200 OK` with complete lead details.
+  - _Response_: `200 OK` with complete lead details.
 - `GET /leads/:id/activities`
-  - *Response*: `200 OK` with chronological audit timeline.
+  - _Response_: `200 OK` with chronological audit timeline.
 - `PATCH /leads/:id/status`
-  - *Body*: `{"status": "CONTACTED", "note": "Spoke on phone"}`
-  - *Response*: `200 OK` with updated lead.
+  - _Body_: `{"status": "CONTACTED", "note": "Spoke on phone"}`
+  - _Response_: `200 OK` with updated lead.
 
 ### Health Check
+
 - `GET /health`
-  - *Response*: `200 OK` (`{"status": "ok", "database": "connected"}`).
+  - _Response_: `200 OK` (`{"status": "ok", "database": "connected"}`).
 
 ---
 
 ## Architectural Decisions & Trade-Offs
 
 1. **Plain `pg` vs ORM (Prisma/TypeORM)**:
-   - *Decision*: Plain `node-postgres` with parameterized SQL and `node-pg-migrate`.
-   - *Rationale*: Zero black-box abstraction overhead, granular control over connection pooling, and explicit transactional locking (`FOR UPDATE`) for concurrent state transitions.
+   - _Decision_: Plain `node-postgres` with parameterized SQL and `node-pg-migrate`.
+   - _Rationale_: Zero black-box abstraction overhead, granular control over connection pooling, and explicit transactional locking (`FOR UPDATE`) for concurrent state transitions.
 2. **Custom Fetch Client vs TanStack Query**:
-   - *Decision*: Plain typed `fetch` wrapped in custom React hooks.
-   - *Rationale*: For a focused 3-view dashboard, lightweight custom hooks minimize bundle size and eliminate unnecessary client-side caching complexity where the database audit trail is the immediate source of truth.
+   - _Decision_: Plain typed `fetch` wrapped in custom React hooks.
+   - _Rationale_: For a focused 3-view dashboard, lightweight custom hooks minimize bundle size and eliminate unnecessary client-side caching complexity where the database audit trail is the immediate source of truth.
 3. **Database-Level JSONB Payloads**:
-   - *Decision*: Store `raw_payload` in `leads` and `metadata` in `activities` as `JSONB`.
-   - *Rationale*: Preserves original webhook bodies for auditing and debugging unexpected third-party field additions without requiring immediate database schema migrations.
+   - _Decision_: Store `raw_payload` in `leads` and `metadata` in `activities` as `JSONB`.
+   - _Rationale_: Preserves original webhook bodies for auditing and debugging unexpected third-party field additions without requiring immediate database schema migrations.
 
 ---
 
@@ -192,4 +202,3 @@ npm test
    - Start command: `npm run migrate:up && npm start`.
 3. Create a **Frontend Service** (root directory `./frontend`):
    - Set environment variables: `VITE_API_URL` (pointing to backend Railway URL) and `VITE_API_KEY`.
-

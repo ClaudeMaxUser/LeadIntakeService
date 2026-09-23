@@ -11,13 +11,18 @@ import { leadsRouter } from './modules/leads/routes.js';
 export function createApp(): Express {
   const app = express();
 
+  // Enable reverse proxy trust for correct client IP detection behind reverse proxy / Docker
+  app.set('trust proxy', 1);
+
   // Security headers
   app.use(helmet());
 
   // CORS configuration
   app.use(
     cors({
-      origin: config.CORS_ORIGIN === '*' ? true : config.CORS_ORIGIN,
+      origin: config.CORS_ORIGIN === '*'
+        ? (config.NODE_ENV === 'production' ? false : true)
+        : config.CORS_ORIGIN,
       credentials: true,
     })
   );

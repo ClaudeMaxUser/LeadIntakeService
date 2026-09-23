@@ -82,4 +82,17 @@ describe('Error Handler Middleware', () => {
     );
     spy.mockRestore();
   });
+
+  it('handles PostgreSQL encoding and input syntax errors (22021, 22P02) with 400 Bad Request', () => {
+    const res = createMockRes();
+    const pgEncodingErr = { code: '22021', message: 'invalid byte sequence for encoding UTF8: 0x00' };
+
+    errorHandler(pgEncodingErr, {} as any, res, vi.fn());
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Bad Request',
+      message: 'Invalid input formatting or character sequence',
+    });
+  });
 });

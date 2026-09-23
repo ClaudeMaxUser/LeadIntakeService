@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { config } from '../../config/index.js';
 import { extractLeadData, MetaWebhookPayloadSchema, normalizeMetaPayload } from './schemas.js';
 import { webhookService } from './service.js';
@@ -13,9 +14,14 @@ export class WebhookController {
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
 
-    if (mode === 'subscribe' && token === config.WEBHOOK_VERIFY_TOKEN) {
-      res.status(200).send(challenge);
-      return;
+    if (mode === 'subscribe' && typeof token === 'string') {
+      const tokenHash = crypto.createHash('sha256').update(token).digest();
+      const expectedHash = crypto.createHash('sha256').update(config.WEBHOOK_VERIFY_TOKEN).digest();
+
+      if (crypto.timingSafeEqual(tokenHash as any, expectedHash as any)) {
+        res.type('text/plain').status(200).send(String(challenge ?? ''));
+        return;
+      }
     }
 
     res.status(403).json({

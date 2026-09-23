@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import { apiKeyAuth } from '../../middleware/apiKeyAuth.js';
+import { apiRateLimiter } from '../../middleware/rateLimiter.js';
 import { leadsController } from './controller.js';
 
 export const leadsRouter = Router();
+
+// Rate limiting on dashboard API endpoints
+leadsRouter.use(apiRateLimiter);
 
 // Protect all /leads* endpoints with API key / Bearer auth
 leadsRouter.use(apiKeyAuth);

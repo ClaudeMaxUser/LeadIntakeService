@@ -44,4 +44,13 @@ describe('verifyMetaSignature', () => {
     const isValid = verifyMetaSignature(Buffer.from(payload), header, secret);
     expect(isValid).toBe(false);
   });
+
+  it('returns false when signature hex is not 64 characters or contains non-hex characters', () => {
+    // 63 characters
+    expect(verifyMetaSignature(Buffer.from(payload), `sha256=${'a'.repeat(63)}`, secret)).toBe(false);
+    // 65 characters
+    expect(verifyMetaSignature(Buffer.from(payload), `sha256=${'a'.repeat(65)}`, secret)).toBe(false);
+    // 64 characters with non-hex
+    expect(verifyMetaSignature(Buffer.from(payload), `sha256=${'z'.repeat(64)}`, secret)).toBe(false);
+  });
 });

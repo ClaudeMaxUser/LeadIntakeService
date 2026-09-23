@@ -6,7 +6,7 @@ export const GetLeadsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   status: LeadStatusEnum.optional(),
-  search: z.string().trim().max(100).optional(),
+  search: z.string().trim().max(100).transform((s) => s.replace(/\0/g, '')).optional(),
   sortBy: z.enum(['createdAt', 'updatedAt', 'fullName', 'status']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
