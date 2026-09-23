@@ -95,15 +95,15 @@ cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
 
-| Variable | Description | Default (Local) |
-| :--- | :--- | :--- |
-| `PORT` | Backend HTTP listening port | `3000` |
-| `DATABASE_URL` | PostgreSQL connection string | `postgres://postgres:postgres@localhost:5432/lead_intake` |
-| `API_KEY` | Dashboard API authorization key | `dev_secret_key_123` |
-| `WEBHOOK_VERIFY_TOKEN` | Meta Webhook GET verification token | `meta_webhook_verify_token_xyz` |
-| `META_APP_SECRET` | Meta App Secret for HMAC-SHA256 signature verification | `meta_test_secret_abc123` |
-| `VITE_API_URL` | Frontend connection URL to backend API | `http://localhost:3000` |
-| `VITE_API_KEY` | Frontend bearer token matching `API_KEY` | `dev_secret_key_123` |
+| Variable               | Description                                            | Default (Local)                                           |
+| :--------------------- | :----------------------------------------------------- | :-------------------------------------------------------- |
+| `PORT`                 | Backend HTTP listening port                            | `3000`                                                    |
+| `DATABASE_URL`         | PostgreSQL connection string                           | `postgres://postgres:postgres@localhost:5432/lead_intake` |
+| `API_KEY`              | Dashboard API authorization key                        | `dev_secret_key_123`                                      |
+| `WEBHOOK_VERIFY_TOKEN` | Meta Webhook GET verification token                    | `meta_webhook_verify_token_xyz`                           |
+| `META_APP_SECRET`      | Meta App Secret for HMAC-SHA256 signature verification | `meta_test_secret_abc123`                                 |
+| `VITE_API_URL`         | Frontend connection URL to backend API                 | `http://localhost:3000`                                   |
+| `VITE_API_KEY`         | Frontend bearer token matching `API_KEY`               | `dev_secret_key_123`                                      |
 
 ### Option A: Local Run with Docker Compose (Recommended)
 
@@ -120,17 +120,20 @@ docker-compose up --build
 ### Option B: Local Run (Manual)
 
 1. **Install dependencies across the monorepo**:
+
    ```bash
    npm install
    ```
 
 2. **Run database migrations**:
    Ensure PostgreSQL is running locally on port 5432, then execute:
+
    ```bash
    npm run migrate:up
    ```
 
 3. **Start backend in development mode**:
+
    ```bash
    npm run dev:backend
    ```
@@ -199,14 +202,14 @@ The application is containerized with multi-stage Dockerfiles ready for deployme
 
 ## 4. Architectural Decisions & Trade-Offs
 
-| Decision | Chosen Solution | Alternative Considered | Rationale & Trade-Off |
-| :--- | :--- | :--- | :--- |
-| **Database Access** | Plain `pg` (node-postgres) + parameterized SQL | Prisma / TypeORM / Drizzle | **Trade-Off**: Writing hand-crafted SQL requires manual query authoring, but grants full transparency, zero ORM cold-start overhead, and precise transactional row locking (`SELECT ... FOR UPDATE`) critical for concurrency. |
-| **Database Migrations** | `node-pg-migrate` | ORM auto-sync / hand-run SQL | **Trade-Off**: Schema changes are explicitly version-controlled and reversible in code, guaranteeing repeatable migrations across development, CI, and production containers. |
-| **Frontend State Management** | Custom hooks (`useLeads`, `useLead`, `useUpdateStatus`, `useUpdateLead`) + native `fetch` | TanStack Query / Redux Toolkit | **Trade-Off**: For a focused 3-screen dashboard, lightweight custom hooks eliminate external dependency bloat (~40kB saved). Since audit trails must reflect server truth immediately, manual cache invalidation was bypassed in favor of explicit atomic refetches. |
-| **Audit Payload Storage** | `JSONB` for `raw_payload` & `metadata` | Normalized relational audit tables | **Trade-Off**: JSONB fields cannot enforce relational foreign keys internally, but provide future-proof flexibility: webhook payloads and audit diffs outlive upstream schema changes without requiring database alterations. |
-| **Authentication Architecture** | Static Bearer API Key | Full OAuth2 / JWT user accounts | **Trade-Off**: For the specified assignment scope, API Key authentication secures dashboard endpoints against unauthorized access without the overhead of user registration, password hashing, and token refresh mechanisms. |
-| **Webhook Processing** | Synchronous database transactions | Background message queue (BullMQ/SQS) | **Trade-Off**: Synchronous processing guarantees immediate consistency and simple failure feedback (`400`/`401`/`201`) to Meta's webhook runner. Under extreme traffic spikes, this trades throughput for simplicity (see Scaling Considerations). |
+| Decision                        | Chosen Solution                                                                           | Alternative Considered                | Rationale & Trade-Off                                                                                                                                                                                                                                                |
+| :------------------------------ | :---------------------------------------------------------------------------------------- | :------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Database Access**             | Plain `pg` (node-postgres) + parameterized SQL                                            | Prisma / TypeORM / Drizzle            | **Trade-Off**: Writing hand-crafted SQL requires manual query authoring, but grants full transparency, zero ORM cold-start overhead, and precise transactional row locking (`SELECT ... FOR UPDATE`) critical for concurrency.                                       |
+| **Database Migrations**         | `node-pg-migrate`                                                                         | ORM auto-sync / hand-run SQL          | **Trade-Off**: Schema changes are explicitly version-controlled and reversible in code, guaranteeing repeatable migrations across development, CI, and production containers.                                                                                        |
+| **Frontend State Management**   | Custom hooks (`useLeads`, `useLead`, `useUpdateStatus`, `useUpdateLead`) + native `fetch` | TanStack Query / Redux Toolkit        | **Trade-Off**: For a focused 3-screen dashboard, lightweight custom hooks eliminate external dependency bloat (~40kB saved). Since audit trails must reflect server truth immediately, manual cache invalidation was bypassed in favor of explicit atomic refetches. |
+| **Audit Payload Storage**       | `JSONB` for `raw_payload` & `metadata`                                                    | Normalized relational audit tables    | **Trade-Off**: JSONB fields cannot enforce relational foreign keys internally, but provide future-proof flexibility: webhook payloads and audit diffs outlive upstream schema changes without requiring database alterations.                                        |
+| **Authentication Architecture** | Static Bearer API Key                                                                     | Full OAuth2 / JWT user accounts       | **Trade-Off**: For the specified assignment scope, API Key authentication secures dashboard endpoints against unauthorized access without the overhead of user registration, password hashing, and token refresh mechanisms.                                         |
+| **Webhook Processing**          | Synchronous database transactions                                                         | Background message queue (BullMQ/SQS) | **Trade-Off**: Synchronous processing guarantees immediate consistency and simple failure feedback (`400`/`401`/`201`) to Meta's webhook runner. Under extreme traffic spikes, this trades throughput for simplicity (see Scaling Considerations).                   |
 
 ---
 
