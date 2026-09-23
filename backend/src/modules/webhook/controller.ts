@@ -10,8 +10,8 @@ export class WebhookController {
    * Meta Webhook Verification Handshake (GET)
    */
   async verifyHandshake(req: Request, res: Response): Promise<void> {
-    const mode = req.query['hub.mode'];
-    const token = req.query['hub.verify_token'];
+    const mode = typeof req.query['hub.mode'] === 'string' ? req.query['hub.mode'].toLowerCase().trim() : req.query['hub.mode'];
+    const token = typeof req.query['hub.verify_token'] === 'string' ? req.query['hub.verify_token'].trim() : req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
 
     if (mode === 'subscribe' && typeof token === 'string') {

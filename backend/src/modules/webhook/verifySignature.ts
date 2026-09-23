@@ -10,12 +10,12 @@ export function verifyMetaSignature(
   }
 
   // Format: sha256=<hex_digest>
-  const parts = signatureHeader.split('=');
-  if (parts.length !== 2 || parts[0] !== 'sha256') {
+  const parts = signatureHeader.trim().split('=');
+  if (parts.length !== 2 || parts[0].toLowerCase().trim() !== 'sha256') {
     return false;
   }
 
-  const expectedSignatureHex = parts[1];
+  const expectedSignatureHex = parts[1].trim();
   if (!/^[0-9a-fA-F]{64}$/.test(expectedSignatureHex)) {
     return false;
   }

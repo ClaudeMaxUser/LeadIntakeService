@@ -70,4 +70,17 @@ describe('verifyMetaSignature', () => {
     // 64 characters with non-hex
     expect(verifyMetaSignature(payloadBuffer, `sha256=${'z'.repeat(64)}`, secret)).toBe(false);
   });
+
+  it('tolerates uppercase SHA256 prefix, uppercase hex digests, and whitespace', () => {
+    const hmac = crypto.createHmac('sha256', secret);
+    hmac.update(payload);
+    const lowercaseDigest = hmac.digest('hex');
+    const uppercaseDigest = lowercaseDigest.toUpperCase();
+
+    // Uppercase prefix and uppercase hex
+    expect(verifyMetaSignature(payloadBuffer, `SHA256=${uppercaseDigest}`, secret)).toBe(true);
+
+    // Mixed case prefix and whitespace
+    expect(verifyMetaSignature(payloadBuffer, `  sha256=${lowercaseDigest}  `, secret)).toBe(true);
+  });
 });

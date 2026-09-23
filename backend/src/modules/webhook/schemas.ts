@@ -83,28 +83,31 @@ export function extractLeadData(payload: MetaWebhookPayload): {
   if (Array.isArray(payload.field_data)) {
     for (const item of payload.field_data) {
       if (item.name && Array.isArray(item.values) && item.values.length > 0) {
-        fieldMap[item.name.toLowerCase()] = item.values[0].trim();
+        fieldMap[item.name.toLowerCase().trim()] = item.values[0].trim();
       }
     }
   }
 
-  // Support full_name, name, or combining first_name + last_name
-  let fullName = fieldMap['full_name'] || fieldMap['name'] || null;
+  // Support full_name, name, fullname, or combining first_name + last_name
+  let fullName = fieldMap['full_name'] || fieldMap['name'] || fieldMap['fullname'] || null;
   if (!fullName && (fieldMap['first_name'] || fieldMap['last_name'])) {
     fullName = `${fieldMap['first_name'] || ''} ${fieldMap['last_name'] || ''}`.trim();
   }
 
-  const email =
+  const rawEmail =
     fieldMap['email'] ||
     fieldMap['email_address'] ||
     fieldMap['work_email'] ||
+    fieldMap['contact_email'] ||
     null;
+  const email = rawEmail ? rawEmail.toLowerCase().trim() : null;
 
   const phone =
     fieldMap['phone_number'] ||
     fieldMap['phone'] ||
     fieldMap['mobile_phone'] ||
     fieldMap['phone_no'] ||
+    fieldMap['telephone'] ||
     null;
 
   const missingFields: string[] = [];

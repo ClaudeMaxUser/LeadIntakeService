@@ -118,6 +118,33 @@ describe('Webhook Payload Parsing & Extraction', () => {
     const extraction = extractLeadData(normalized!);
     expect(extraction.missingFields).toContain('email or phone_number');
   });
+
+  it('normalizes uppercase field names and normalizes email values to lowercase', () => {
+    const payloadWithUpper = {
+      leadgen_id: '54321',
+      field_data: [
+        { name: ' FULL_NAME ', values: [' Jane UPPER '] },
+        { name: ' EMAIL ', values: [' JANE.DOE@EXAMPLE.COM '] },
+        { name: ' PHONE_NUMBER ', values: [' +1-800-555-0199 '] },
+      ],
+    };
+
+    const parseResult = MetaWebhookPayloadSchema.safeParse(payloadWithUpper);
+    expect(parseResult.success).toBe(true);
+
+    const normalized = normalizeMetaPayload(parseResult.data!);
+    const extraction = extractLeadData(normalized!);
+    expect(extraction.missingFields).toBeUndefined();
+    expect(extraction.data).toEqual({
+      leadgen_id: '54321',
+      full_name: 'Jane UPPER',
+      email: 'jane.doe@example.com',
+      phone: '+1-800-555-0199',
+      page_id: null,
+      form_id: null,
+      ad_id: null,
+    });
+  });
 });
 
 describe('UpdateLeadSchema Validation & Security Sanitization', () => {
