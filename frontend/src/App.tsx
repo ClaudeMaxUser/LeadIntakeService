@@ -1,13 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
 import { LeadsPage } from "./pages/LeadsPage.js";
 import { LeadDetailPage } from "./pages/LeadDetailPage.js";
 import { ErrorBoundary } from "./components/common/ErrorBoundary.js";
-import { ApiConfigModal } from "./components/common/ApiConfigModal.js";
 
 export const App: React.FC = () => {
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
-
   return (
     <BrowserRouter>
       <div
@@ -140,38 +137,10 @@ export const App: React.FC = () => {
                 >
                   <span>📋</span> Leads Feed
                 </Link>
-
-                <button
-                  type="button"
-                  onClick={() => setIsConfigOpen(true)}
-                  style={{
-                    fontSize: "0.85rem",
-                    color: "#cbd5e1",
-                    textDecoration: "none",
-                    fontWeight: 500,
-                    padding: "0.45rem 0.75rem",
-                    borderRadius: "6px",
-                    backgroundColor: "rgba(255, 255, 255, 0.05)",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.35rem",
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                  }}
-                  title="Configure Backend API URL & Key"
-                >
-                  <span>⚙️</span> API Config
-                </button>
               </nav>
             </div>
           </div>
         </header>
-
-        <ApiConfigModal
-          isOpen={isConfigOpen}
-          onClose={() => setIsConfigOpen(false)}
-        />
 
         <main
           style={{

@@ -9,9 +9,6 @@ export function normalizeApiUrl(url: string): string {
 
 export function getApiUrl(): string {
   if (typeof window !== 'undefined') {
-    const customUrl = localStorage.getItem('lead_intake_api_url');
-    if (customUrl && customUrl.trim() !== '') return normalizeApiUrl(customUrl);
-
     const runtimeUrl = (window as any)?.__RUNTIME_CONFIG__?.VITE_API_URL;
     if (runtimeUrl && runtimeUrl.trim() !== '') return normalizeApiUrl(runtimeUrl);
   }
@@ -23,9 +20,6 @@ export function getApiUrl(): string {
 
 export function getApiKey(): string {
   if (typeof window !== 'undefined') {
-    const customKey = localStorage.getItem('lead_intake_api_key');
-    if (customKey && customKey.trim() !== '') return customKey.trim();
-
     const runtimeKey = (window as any)?.__RUNTIME_CONFIG__?.VITE_API_KEY;
     if (runtimeKey && runtimeKey.trim() !== '') return runtimeKey.trim();
   }
