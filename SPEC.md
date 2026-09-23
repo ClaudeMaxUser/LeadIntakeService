@@ -5,35 +5,41 @@ its gaps, and the detailed contract (data models, API shapes, edge cases, folder
 coding tool or a human can build from without re-asking questions already answered here.
 
 `AGENT.md` is the separate, living log: AI usage, architecture-decision history, and open
-assumptions, filled in *as the project is built*.
+assumptions, filled in _as the project is built_.
 
 ---
 
 ## Part A — Original Assignment Brief
 
 ### Objective
+
 Build a Lead Intake Service demonstrating architecture, ownership, engineering judgment, and
 production readiness. AI tools are allowed and encouraged.
 
 ### Scenario
+
 A Meta Ads webhook sends leads to your system. The application should receive, store, audit, and
 display those leads.
 
 ### Frontend Requirements
+
 - Lead List
 - Lead Detail View
 - Activity Timeline
 
 ### Backend Requirements
+
 - `POST /webhook/meta-lead`
 - `GET /leads`
 - `GET /leads/:id`
 - `PATCH /leads/:id/status`
 
 ### Audit Trail
+
 Every action should generate an activity record: Lead Created, Lead Updated, Status Changed.
 
 ### Technology Stack (as given)
+
 - **Frontend:** React + TypeScript
 - **Backend:** Any backend technology: Node.js (Express/NestJS/Fastify), Golang,
   Python (FastAPI/Django), or comparable.
@@ -41,6 +47,7 @@ Every action should generate an activity record: Lead Created, Lead Updated, Sta
 - **Deployment:** Docker
 
 ### Required Deliverables
+
 - Source Code Repository
 - Live Deployment URL
 - README.md
@@ -48,51 +55,55 @@ Every action should generate an activity record: Lead Created, Lead Updated, Sta
 - Minimum 12–15 meaningful Git commits
 
 ### README.md must cover
+
 Architecture, Setup Instructions, Deployment Steps, Trade-offs, Scaling Considerations, and
 Future Improvements.
 
 ### AGENT.md must cover
+
 AI tools used, prompts, AI-generated sections, manually written sections, and architecture
 decisions.
 
 ### AI Usage
+
 AI tools are allowed and encouraged. Evaluated: engineering judgment, problem solving, ownership,
 architecture decisions, and quality of the final solution.
 
 ### Evaluation Criteria
-| Criterion | Weight |
-|---|---|
-| Architecture | 20% |
-| Backend Design | 20% |
-| Frontend Quality | 15% |
-| Audit/Event Design | 10% |
-| Deployment | 10% |
-| README | 10% |
-| AGENT.md | 5% |
-| Git Commit Trail | 5% |
-| Testing | 5% |
+
+| Criterion          | Weight |
+| ------------------ | ------ |
+| Architecture       | 20%    |
+| Backend Design     | 20%    |
+| Frontend Quality   | 15%    |
+| Audit/Event Design | 10%    |
+| Deployment         | 10%    |
+| README             | 10%    |
+| AGENT.md           | 5%     |
+| Git Commit Trail   | 5%     |
+| Testing            | 5%     |
 
 ---
 
 ## Part B — Finalized Decisions (fill the gaps the brief leaves open)
 
-| Area | Decision |
-|---|---|
-| Backend | Node.js + Express + TypeScript |
-| Database | PostgreSQL |
-| DB access | Plain `pg` (node-postgres), hand-written parameterized SQL — **no ORM** |
-| Migrations | `node-pg-migrate` |
-| Validation | Zod |
-| Frontend | React + TypeScript, plain `fetch` + custom hooks — **no TanStack Query** |
-| Testing | **Vitest**, shared config for backend and frontend (+ Supertest for backend HTTP tests, + React Testing Library for frontend component tests) |
-| Lead schema | Follows real Meta Lead Ads webhook shape (`leadgen_id`, `form_id`, `field_data[]`) |
-| Status flow | `NEW → CONTACTED → QUALIFIED → CONVERTED`, with `LOST` reachable from any non-terminal state |
-| Auth | API key / bearer token on all `/leads*` routes. Webhook route uses Meta's own signature scheme instead (see Part C §6) |
+| Area                 | Decision                                                                                                                                                             |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend              | Node.js + Express + TypeScript                                                                                                                                       |
+| Database             | PostgreSQL                                                                                                                                                           |
+| DB access            | Plain `pg` (node-postgres), hand-written parameterized SQL — **no ORM**                                                                                              |
+| Migrations           | `node-pg-migrate`                                                                                                                                                    |
+| Validation           | Zod                                                                                                                                                                  |
+| Frontend             | React + TypeScript, plain `fetch` + custom hooks — **no TanStack Query**                                                                                             |
+| Testing              | **Vitest**, shared config for backend and frontend (+ Supertest for backend HTTP tests, + React Testing Library for frontend component tests)                        |
+| Lead schema          | Follows real Meta Lead Ads webhook shape (`leadgen_id`, `form_id`, `field_data[]`)                                                                                   |
+| Status flow          | `NEW → CONTACTED → QUALIFIED → CONVERTED`, with `LOST` reachable from any non-terminal state                                                                         |
+| Auth                 | API key / bearer token on all `/leads*` routes. Webhook route uses Meta's own signature scheme instead (see Part C §6)                                               |
 | Webhook verification | **Full** Meta verification implemented: `GET` `hub.challenge` handshake **and** `X-Hub-Signature-256` HMAC check on every POST — not the simplified/optional version |
-| Duplicate leads | Deduped by `leadgen_id` (unique constraint) — resend returns `200 duplicate_ignored`, no second row |
-| `GET /leads` | Pagination + status filter + search + sort |
-| Deployment | Railway (managed Postgres + Docker deploy, one live URL) |
-| Docs split | This file (`SPEC.md`) = brief + decisions + full contract. `AGENT.md` = living log only |
+| Duplicate leads      | Deduped by `leadgen_id` (unique constraint) — resend returns `200 duplicate_ignored`, no second row                                                                  |
+| `GET /leads`         | Pagination + status filter + search + sort                                                                                                                           |
+| Deployment           | Railway (managed Postgres + Docker deploy, one live URL)                                                                                                             |
+| Docs split           | This file (`SPEC.md`) = brief + decisions + full contract. `AGENT.md` = living log only                                                                              |
 
 ---
 
@@ -109,19 +120,19 @@ login/accounts. These are reasonable "Future Improvements" for the README, not b
 
 ### 2. Locked-in stack
 
-| Layer | Choice |
-|---|---|
-| Frontend | React + TypeScript |
-| Backend | Node.js + Express + TypeScript |
-| Database | PostgreSQL |
-| DB access | `pg` + hand-written SQL |
-| Migrations | `node-pg-migrate` |
-| Validation | Zod |
-| Server-state (frontend) | Plain `fetch` wrapped in custom hooks |
-| Auth | API key / bearer token (dashboard API); HMAC signature (webhook) |
-| Tests | Vitest (shared) + Supertest (backend HTTP) + React Testing Library (frontend) |
-| Containerization | Docker + docker-compose |
-| Deployment target | Railway |
+| Layer                   | Choice                                                                        |
+| ----------------------- | ----------------------------------------------------------------------------- |
+| Frontend                | React + TypeScript                                                            |
+| Backend                 | Node.js + Express + TypeScript                                                |
+| Database                | PostgreSQL                                                                    |
+| DB access               | `pg` + hand-written SQL                                                       |
+| Migrations              | `node-pg-migrate`                                                             |
+| Validation              | Zod                                                                           |
+| Server-state (frontend) | Plain `fetch` wrapped in custom hooks                                         |
+| Auth                    | API key / bearer token (dashboard API); HMAC signature (webhook)              |
+| Tests                   | Vitest (shared) + Supertest (backend HTTP) + React Testing Library (frontend) |
+| Containerization        | Docker + docker-compose                                                       |
+| Deployment target       | Railway                                                                       |
 
 ### 3. Repository structure
 
@@ -212,39 +223,48 @@ typed columns.
 All routes below except the two webhook routes require `Authorization: Bearer <API_KEY>` (checked
 against the `API_KEY` env var). Missing/invalid key → `401`.
 
-#### `POST /webhook/meta-lead`  *(no API key — verified by signature instead, see §6)*
+#### `POST /webhook/meta-lead` _(no API key — verified by signature instead, see §6)_
+
 - `201` — lead created. Body: the created lead.
 - `200` — `{ "status": "duplicate_ignored", "leadId": "<uuid>" }` when `external_lead_id` already exists.
 - `400` — validation failure. Body: `{ "error": "...", "missingFields": [...] }`.
 - `401` — missing/invalid `X-Hub-Signature-256`.
 - `413` — payload too large.
 
-#### `GET /webhook/meta-lead`  *(no API key — Meta's own verification handshake)*
+#### `GET /webhook/meta-lead` _(no API key — Meta's own verification handshake)_
+
 - `200` — echoes `hub.challenge` if `hub.verify_token` matches `WEBHOOK_VERIFY_TOKEN`.
 - `403` — token mismatch.
 
 #### `GET /leads`
+
 Query params: `page` (default 1), `limit` (default 20, max 100), `status` (filter), `search`
 (matches name/email/phone), `sortBy` (allow-list: `createdAt`, `updatedAt`, `fullName`, `status`),
 `sortOrder` (`asc`/`desc`).
+
 - `200` — `{ "data": Lead[], "pagination": { "page", "limit", "total", "totalPages" } }`.
 - `400` — invalid query params.
 - `401` — missing/invalid API key.
 
 #### `GET /leads/:id`
+
 - `200` — full lead.
 - `400` — `:id` not a valid UUID.
 - `401` — missing/invalid API key.
 - `404` — no lead with that id.
 
 #### `GET /leads/:id/activities`
+
 Returns the audit trail for one lead, newest-first, with a stable secondary sort (see §8).
+
 - `200` — `Activity[]`.
 - `401` — missing/invalid API key.
 - `404` — lead not found.
 
 #### `PATCH /leads/:id/status`
+
 Body: `{ "status": "CONTACTED", "note"?: string }`.
+
 - `200` — updated lead. Writes a `STATUS_CHANGED` activity with `actor: "user:dashboard"` (unless
   it's a true no-op — see §7).
 - `400` — status not in enum, illegal transition, or missing `status` field.
@@ -252,14 +272,17 @@ Body: `{ "status": "CONTACTED", "note"?: string }`.
 - `404` — lead not found.
 
 #### `PATCH /leads/:id`
+
 Body: `{ "full_name"?: string, "email"?: string | null, "phone"?: string | null }`.
+
 - `200` — updated lead. Writes a `LEAD_UPDATED` activity with `actor: "user:dashboard"` containing
   diff metadata (`updatedFields`, `previous`, `current`), unless values are identical (no-op).
 - `400` — validation failure (empty body, invalid email format, invalid phone characters, or unknown properties).
 - `401` — missing/invalid API key.
 - `404` — lead not found.
 
-#### `GET /health`  *(no API key — deployment platform readiness check)*
+#### `GET /health` _(no API key — deployment platform readiness check)_
+
 - `200` — `{ "status": "ok" }`.
 
 ### 6. Webhook ingestion — Meta Ads lead webhook
@@ -284,11 +307,12 @@ Payload shape (mirrors Meta's real `field_data` structure):
 Map `field_data` defensively: look up by `name`, take `values[0]`, tolerate missing/extra entries.
 
 **Verification (implemented in full, not the simplified version):**
+
 - **GET handshake:** Meta calls `GET /webhook/meta-lead?hub.mode=subscribe&hub.verify_token=...&hub.challenge=...`
   once, on setup. Compare `hub.verify_token` to the `WEBHOOK_VERIFY_TOKEN` env var; if it matches,
   echo back `hub.challenge` as plain text with `200`; otherwise `403`.
 - **POST signature:** every POST must carry `X-Hub-Signature-256: sha256=<hex>`. Compute
-  HMAC-SHA256 of the *raw* request body using `META_APP_SECRET`, compare to the header
+  HMAC-SHA256 of the _raw_ request body using `META_APP_SECRET`, compare to the header
   (constant-time comparison). Mismatch or missing header → `401`, no lead created.
 
 **Idempotency:** `external_lead_id` (= `leadgen_id`) has a unique DB constraint. On insert
@@ -340,6 +364,7 @@ NEW → CONTACTED → QUALIFIED → CONVERTED
 ### 10. Edge cases & validation checklist
 
 **Webhook ingestion**
+
 - [ ] Duplicate `leadgen_id` (retry) → idempotent, `200 duplicate_ignored`, no duplicate row.
 - [ ] Missing required field (`full_name`, and at least one of `email`/`phone`) → `400`, no row created.
 - [ ] Malformed JSON / wrong `Content-Type` → `400`.
@@ -352,10 +377,12 @@ NEW → CONTACTED → QUALIFIED → CONVERTED
       assume array position.
 
 **Dashboard API / auth**
+
 - [ ] Missing `Authorization` header on any `/leads*` route → `401`.
 - [ ] Malformed or wrong API key → `401`.
 
 **Status updates**
+
 - [ ] Status value outside the enum → `400`.
 - [ ] Illegal transition (e.g. `CONVERTED → NEW`) → `400`, message lists allowed next states.
 - [ ] `PATCH` on nonexistent lead → `404`.
@@ -365,6 +392,7 @@ NEW → CONTACTED → QUALIFIED → CONVERTED
 - [ ] Missing `status` field in body → `400`.
 
 **List / detail fetch**
+
 - [ ] `:id` not a valid UUID → `400`, not `500`.
 - [ ] Nonexistent `:id` → `404`.
 - [ ] `page=0`, negative, or absurdly large `limit` → clamp/validate with sane defaults; `limit`
@@ -375,6 +403,7 @@ NEW → CONTACTED → QUALIFIED → CONVERTED
 - [ ] `sortBy` not in the allow-list → `400`.
 
 **Security / infra**
+
 - [ ] Secrets (`DATABASE_URL`, `API_KEY`, `WEBHOOK_VERIFY_TOKEN`, `META_APP_SECRET`) via env vars
       only; `.env.example` committed, `.env` gitignored.
 - [ ] CORS restricted to the deployed frontend origin in production.

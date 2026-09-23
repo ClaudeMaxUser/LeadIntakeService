@@ -164,6 +164,13 @@ export class LeadsService {
 
       const currentLead = selectResult.rows[0];
 
+      // Business validation: ensure lead retains at least one contact method (email or phone)
+      const resultingEmail = updates.email !== undefined ? updates.email : currentLead.email;
+      const resultingPhone = updates.phone !== undefined ? updates.phone : currentLead.phone;
+      if (!resultingEmail && !resultingPhone) {
+        throw new AppError('Lead must retain at least one contact method (email or phone).', 400);
+      }
+
       // Identify genuine field changes
       const changedFields: string[] = [];
       const previousValues: Record<string, string | null> = {};

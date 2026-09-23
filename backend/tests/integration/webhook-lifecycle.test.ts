@@ -131,6 +131,18 @@ describe('End-to-End Webhook & Lead Lifecycle Integration', () => {
 
     expect(noopDetailsRes.status).toBe(200);
 
+    // Test rejecting attempt to remove all contact methods
+    const invalidContactRes = await request(app)
+      .patch(`/leads/${createdLeadId}`)
+      .set('Authorization', `Bearer ${config.API_KEY}`)
+      .send({
+        email: null,
+        phone: null,
+      });
+
+    expect(invalidContactRes.status).toBe(400);
+    expect(invalidContactRes.body.error).toContain('Lead must retain at least one contact method');
+
     // 7. Test idempotent no-op status update
     const noopRes = await request(app)
       .patch(`/leads/${createdLeadId}/status`)
