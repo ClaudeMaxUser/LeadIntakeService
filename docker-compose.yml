@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lead-intake-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: lead_intake_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d lead_intake_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lead-intake-backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/lead_intake_db
+      API_KEY: dev_secret_api_key_12345
+      WEBHOOK_VERIFY_TOKEN: dev_meta_verify_token_12345
+      META_APP_SECRET: dev_meta_app_secret_12345
+      CORS_ORIGIN: http://localhost:5173
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lead-intake-frontend
+    restart: always
+    ports:
+      - "5173:80"
+    environment:
+      VITE_API_URL: http://localhost:3000
+      VITE_API_KEY: dev_secret_api_key_12345
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
