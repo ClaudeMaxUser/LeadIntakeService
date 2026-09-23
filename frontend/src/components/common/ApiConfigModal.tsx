@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getApiUrl, getApiKey } from "../../api/client.js";
+import { getApiUrl, getApiKey, normalizeApiUrl } from "../../api/client.js";
 
 interface ApiConfigModalProps {
   isOpen: boolean;
@@ -32,8 +32,8 @@ export const ApiConfigModal: React.FC<ApiConfigModalProps> = ({
     setTesting(true);
     setStatusMsg({ type: "info", text: "Testing connection to /health..." });
     try {
-      const cleanUrl = apiUrl.trim().replace(/\/+$/, "");
-      const res = await fetch(`${cleanUrl}/health`, {
+      const fullUrl = normalizeApiUrl(apiUrl);
+      const res = await fetch(`${fullUrl}/health`, {
         headers: apiKey ? { Authorization: `Bearer ${apiKey.trim()}` } : {},
       });
       if (res.ok) {
@@ -59,9 +59,9 @@ export const ApiConfigModal: React.FC<ApiConfigModalProps> = ({
   };
 
   const handleSave = () => {
-    const cleanUrl = apiUrl.trim().replace(/\/+$/, "");
+    const fullUrl = normalizeApiUrl(apiUrl);
     const cleanKey = apiKey.trim();
-    localStorage.setItem("lead_intake_api_url", cleanUrl);
+    localStorage.setItem("lead_intake_api_url", fullUrl);
     localStorage.setItem("lead_intake_api_key", cleanKey);
     onClose();
     window.location.reload();

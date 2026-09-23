@@ -1,13 +1,22 @@
+export function normalizeApiUrl(url: string): string {
+  let cleaned = url.trim().replace(/\/+$/, '');
+  if (!cleaned) return '';
+  if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
+    cleaned = cleaned.includes('localhost') ? `http://${cleaned}` : `https://${cleaned}`;
+  }
+  return cleaned;
+}
+
 export function getApiUrl(): string {
   if (typeof window !== 'undefined') {
     const customUrl = localStorage.getItem('lead_intake_api_url');
-    if (customUrl && customUrl.trim() !== '') return customUrl.trim().replace(/\/+$/, '');
+    if (customUrl && customUrl.trim() !== '') return normalizeApiUrl(customUrl);
 
     const runtimeUrl = (window as any)?.__RUNTIME_CONFIG__?.VITE_API_URL;
-    if (runtimeUrl && runtimeUrl.trim() !== '') return runtimeUrl.trim().replace(/\/+$/, '');
+    if (runtimeUrl && runtimeUrl.trim() !== '') return normalizeApiUrl(runtimeUrl);
   }
   const buildUrl = import.meta.env.VITE_API_URL;
-  if (buildUrl && buildUrl.trim() !== '') return buildUrl.trim().replace(/\/+$/, '');
+  if (buildUrl && buildUrl.trim() !== '') return normalizeApiUrl(buildUrl);
 
   return 'http://localhost:3000';
 }
