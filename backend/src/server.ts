@@ -2,6 +2,7 @@ import { createApp } from './app.js';
 import { config } from './config/index.js';
 import { pool } from './db/index.js';
 import { runMigrations } from './db/migrate.js';
+import { seedDatabase } from './db/seed.js';
 
 async function bootstrap() {
   const app = createApp();
@@ -10,10 +11,22 @@ async function bootstrap() {
     console.log(`🚀 Lead Intake Backend listening on 0.0.0.0:${config.PORT} [${config.NODE_ENV}]`);
   });
 
-  // Automatically apply database migrations on startup in background
-  runMigrations().catch((err: any) => {
-    console.error('⚠️ Automatic database migration notice:', err.message);
-  });
+  // Automatically apply database migrations & initial seed in background
+  runMigrations()
+    .then(async () => {
+      try {
+        const { rows } = await pool.query('SELECT COUNT(*) as count FROM leads');
+        if (parseInt(rows[0]?.count || '0', 10) === 0) {
+          console.log('🌱 Database is empty. Auto-seeding initial leads...');
+          await seedDatabase();
+        }
+      } catch (seedErr: any) {
+        console.warn('⚠️ Auto-seed notice:', seedErr.message);
+      }
+    })
+    .catch((err: any) => {
+      console.error('⚠️ Automatic database migration notice:', err.message);
+    });
 
   // Graceful shutdown handling
   const gracefulShutdown = (signal: string) => {
