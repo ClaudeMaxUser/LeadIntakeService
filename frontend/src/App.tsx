@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
 import { LeadsPage } from "./pages/LeadsPage.js";
 import { LeadDetailPage } from "./pages/LeadDetailPage.js";
+import { ErrorBoundary } from "./components/common/ErrorBoundary.js";
 
 export const App: React.FC = () => {
   return (
@@ -150,12 +151,14 @@ export const App: React.FC = () => {
             flex: 1,
           }}
         >
-          <Routes>
-            <Route path="/" element={<Navigate to="/leads" replace />} />
-            <Route path="/leads" element={<LeadsPage />} />
-            <Route path="/leads/:id" element={<LeadDetailPage />} />
-            <Route path="*" element={<Navigate to="/leads" replace />} />
-          </Routes>
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/" element={<Navigate to="/leads" replace />} />
+              <Route path="/leads" element={<LeadsPage />} />
+              <Route path="/leads/:id" element={<LeadDetailPage />} />
+              <Route path="*" element={<Navigate to="/leads" replace />} />
+            </Routes>
+          </ErrorBoundary>
         </main>
 
         <footer
