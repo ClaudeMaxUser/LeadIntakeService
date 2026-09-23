@@ -37,6 +37,10 @@ project is built*, not reconstructed from memory at the end.
 | 2026-09-23 | Antigravity | "Build complete React dashboard components, custom hooks, and pages" | Direct | Implemented LeadList, LeadDetail, ActivityTimeline, StatusBadge, and custom hooks | `frontend/src/components/*`, `frontend/src/pages/*`, `frontend/src/hooks/*` |
 | 2026-09-23 | Antigravity | "Implement Supertest integration tests and RTL frontend component tests" | Direct | Verified all 24 backend tests and 8 frontend tests pass with 100% success rate | `backend/tests/integration/*`, `frontend/src/components/**/*.test.tsx` |
 | 2026-09-23 | Antigravity | "Write comprehensive README.md with architecture diagram, trade-offs, and deployment" | Direct | Formatted architecture diagram and Railway deployment steps | `README.md` |
+| 2026-09-23 | Antigravity | "Review project end-to-end against evaluation criteria and identify gaps" | Direct | Comprehensive code review report covering architecture, backend, frontend, security, and tests | `review.md`, `implementation_plan.md` |
+| 2026-09-23 | Antigravity | "Implement race-safe webhook idempotency and timing-safe API key auth" | Direct | Migrated to INSERT ... ON CONFLICT DO NOTHING and crypto.timingSafeEqual with SHA-256 | `backend/src/modules/webhook/service.ts`, `backend/src/middleware/apiKeyAuth.ts` |
+| 2026-09-23 | Antigravity | "Refactor frontend with CSS modules, ErrorBoundary, and Vite build ARGs" | Direct | Eliminated redundant inline styling, added crash resilience, and decoupled activities types | `frontend/Dockerfile`, `frontend/src/components/**/*`, `backend/src/modules/activities/*` |
+| 2026-09-23 | Antigravity | "Add full lifecycle end-to-end integration test against PostgreSQL" | Direct | Verified webhook ingestion -> duplicate idempotency -> list -> detail -> status update -> audit trail | `backend/tests/integration/webhook-lifecycle.test.ts` |
 
 
 ---

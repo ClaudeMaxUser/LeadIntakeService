@@ -128,8 +128,8 @@ nvm use 22
 npm test
 ```
 
-- **Backend Tests (24 tests)**: Vitest + Supertest covering HMAC cryptographic verification, payload parsing, status transition rules, and API authentication.
-- **Frontend Tests (8 tests)**: Vitest + React Testing Library covering UI components, status badges, and table rendering.
+- **Backend Tests (35 tests)**: Vitest + Supertest covering HMAC cryptographic verification, payload parsing, status transition rules, API authentication, error handling, and complete webhook ingestion lifecycle.
+- **Frontend Tests (16 tests)**: Vitest + React Testing Library covering UI components, status badges, pagination, and table rendering.
 
 ---
 
