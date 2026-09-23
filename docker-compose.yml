@@ -41,6 +41,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3000
+        VITE_API_KEY: dev_secret_api_key_12345
     container_name: lead-intake-frontend
     restart: always
     ports:
