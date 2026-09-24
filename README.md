@@ -328,30 +328,308 @@ The following diagram illustrates the evolution of the system architecture from 
 
 ## API Reference
 
+Comprehensive reference with ready-to-run `curl` commands matching the exact authentication and payload contracts of the service.
+
+> [!NOTE]
+>
+> - Replace `<API_URL>` with your backend URL (e.g., `http://localhost:3000` or `https://leadintakeservice-production.up.railway.app`).
+> - Dashboard endpoints (`/leads*`) require authentication via `Authorization: Bearer <API_KEY>`.
+> - The webhook endpoint (`POST /webhook/meta-lead`) verifies cryptographic authenticity via `X-Hub-Signature-256` signed with `META_APP_SECRET`.
+
+---
+
 ### Webhook Endpoints
 
-- `GET /webhook/meta-lead?hub.mode=subscribe&hub.verify_token=...&hub.challenge=...`
-  - _Response_: 200 (echoes challenge) or 403 Forbidden.
-- `POST /webhook/meta-lead`
-  - _Headers_: `X-Hub-Signature-256: sha256=<hex>`
-  - _Response_: `201 Created` (emits `LEAD_CREATED`) or `200 OK` (`{"status": "duplicate_ignored", "leadId": "..."}`).
+#### 1. Ingest Meta Lead Webhook (`POST /webhook/meta-lead`)
+
+Ingests an inbound lead from Meta Lead Ads. Requires an HMAC-SHA256 signature in the `X-Hub-Signature-256` header calculated over the raw JSON payload using `META_APP_SECRET`.
+
+**Testing via cURL (with HMAC generation)**:
+
+```bash
+# 1. Define payload and Meta App Secret
+PAYLOAD='{"leadgen_id":"demo-001","field_data":[{"name":"full_name","values":["John Doe"]},{"name":"email","values":["john@example.com"]},{"name":"phone_number","values":["9876543210"]}]}'
+SECRET="meta_test_secret_abc123"
+
+# 2. Compute HMAC-SHA256 hex signature
+SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$SECRET" | sed 's/^.* //')
+
+# 3. Send Webhook request
+curl -X POST <API_URL>/webhook/meta-lead \
+  -H "Content-Type: application/json" \
+  -H "X-Hub-Signature-256: sha256=$SIGNATURE" \
+  -d "$PAYLOAD"
+```
+
+**Standard cURL Structure**:
+
+```bash
+curl -X POST <API_URL>/webhook/meta-lead \
+  -H "Content-Type: application/json" \
+  -H "X-Hub-Signature-256: sha256=<HMAC_SHA256_HEX>" \
+  -d '{
+    "leadgen_id": "demo-001",
+    "field_data": [
+      { "name": "full_name", "values": ["John Doe"] },
+      { "name": "email", "values": ["john@example.com"] },
+      { "name": "phone_number", "values": ["9876543210"] }
+    ]
+  }'
+```
+
+**Response (`201 Created` - New Lead Ingested)**:
+
+```json
+{
+  "id": "e6a18d18-3563-455a-bd5b-9f6046eef831",
+  "external_lead_id": "demo-001",
+  "full_name": "John Doe",
+  "email": "john@example.com",
+  "phone": "9876543210",
+  "status": "NEW",
+  "raw_payload": {
+    "leadgen_id": "demo-001",
+    "field_data": [
+      { "name": "full_name", "values": ["John Doe"] },
+      { "name": "email", "values": ["john@example.com"] },
+      { "name": "phone_number", "values": ["9876543210"] }
+    ]
+  },
+  "created_at": "2026-09-24T17:15:00.000Z",
+  "updated_at": "2026-09-24T17:15:00.000Z"
+}
+```
+
+**Response (`200 OK` - Duplicate Delivery Safely Ignored)**:
+
+```json
+{
+  "status": "duplicate_ignored",
+  "leadId": "e6a18d18-3563-455a-bd5b-9f6046eef831"
+}
+```
+
+---
+
+#### 2. Webhook Challenge Handshake (`GET /webhook/meta-lead`)
+
+Used by Meta to verify webhook endpoint ownership during initial App configuration.
+
+```bash
+curl -X GET "<API_URL>/webhook/meta-lead?hub.mode=subscribe&hub.verify_token=meta_webhook_verify_token_xyz&hub.challenge=1158201444"
+```
+
+**Response (`200 OK`)**:
+
+```text
+1158201444
+```
+
+---
 
 ### Dashboard Endpoints (Requires `Authorization: Bearer <API_KEY>`)
 
-- `GET /leads?page=1&limit=20&status=NEW&search=john&sortBy=createdAt&sortOrder=desc`
-  - _Response_: `200 OK` with paginated lead list.
-- `GET /leads/:id`
-  - _Response_: `200 OK` with complete lead details.
-- `GET /leads/:id/activities`
-  - _Response_: `200 OK` with chronological audit timeline.
-- `PATCH /leads/:id/status`
-  - _Body_: `{"status": "CONTACTED", "note": "Spoke on phone"}`
-  - _Response_: `200 OK` with updated lead (emits `STATUS_CHANGED`).
-- `PATCH /leads/:id`
-  - _Body_: `{"full_name": "Jane Smith", "email": "jane.smith@example.com", "phone": "+1987654321"}`
-  - _Response_: `200 OK` with updated lead (emits `LEAD_UPDATED` with field diff metadata).
+#### 3. List Leads (`GET /leads`)
 
-### Health Check
+Retrieves a paginated, filterable list of leads.
 
-- `GET /health`
-  - _Response_: `200 OK` (`{"status": "ok", "database": "connected"}`).
+```bash
+curl -X GET "<API_URL>/leads?page=1&limit=20&status=NEW&search=john&sortBy=createdAt&sortOrder=desc" \
+  -H "Authorization: Bearer <API_KEY>"
+```
+
+**Query Parameters**:
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `page` | Integer | `1` | Page number |
+| `limit` | Integer | `20` | Items per page (max 100) |
+| `status` | String | `ALL` | Filter by status: `NEW`, `CONTACTED`, `QUALIFIED`, `CONVERTED`, `LOST` |
+| `search` | String | _empty_ | Substring search across `full_name`, `email`, and `phone` |
+| `sortBy` | String | `createdAt` | Sort field (`createdAt` or `fullName`) |
+| `sortOrder`| String | `desc` | Sort order (`asc` or `desc`) |
+
+**Response (`200 OK`)**:
+
+```json
+{
+  "data": [
+    {
+      "id": "e6a18d18-3563-455a-bd5b-9f6046eef831",
+      "external_lead_id": "demo-001",
+      "full_name": "John Doe",
+      "email": "john@example.com",
+      "phone": "9876543210",
+      "status": "NEW",
+      "created_at": "2026-09-24T17:15:00.000Z",
+      "updated_at": "2026-09-24T17:15:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1
+  }
+}
+```
+
+---
+
+#### 4. Get Lead by ID (`GET /leads/:id`)
+
+Fetches full details of a single lead including its immutable `raw_payload`.
+
+```bash
+curl -X GET "<API_URL>/leads/e6a18d18-3563-455a-bd5b-9f6046eef831" \
+  -H "Authorization: Bearer <API_KEY>"
+```
+
+**Response (`200 OK`)**:
+
+```json
+{
+  "id": "e6a18d18-3563-455a-bd5b-9f6046eef831",
+  "external_lead_id": "demo-001",
+  "full_name": "John Doe",
+  "email": "john@example.com",
+  "phone": "9876543210",
+  "status": "NEW",
+  "raw_payload": {
+    "leadgen_id": "demo-001",
+    "field_data": [
+      { "name": "full_name", "values": ["John Doe"] },
+      { "name": "email", "values": ["john@example.com"] },
+      { "name": "phone_number", "values": ["9876543210"] }
+    ]
+  },
+  "created_at": "2026-09-24T17:15:00.000Z",
+  "updated_at": "2026-09-24T17:15:00.000Z"
+}
+```
+
+---
+
+#### 5. Transition Lead Status (`PATCH /leads/:id/status`)
+
+Updates the pipeline stage (`NEW → CONTACTED → QUALIFIED → CONVERTED`, or `LOST`) and appends a `STATUS_CHANGED` activity audit entry.
+
+```bash
+curl -X PATCH "<API_URL>/leads/e6a18d18-3563-455a-bd5b-9f6046eef831/status" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <API_KEY>" \
+  -d '{
+    "status": "CONTACTED",
+    "note": "Spoke on phone with client; interested in product tier 2."
+  }'
+```
+
+**Response (`200 OK`)**:
+
+```json
+{
+  "id": "e6a18d18-3563-455a-bd5b-9f6046eef831",
+  "external_lead_id": "demo-001",
+  "full_name": "John Doe",
+  "email": "john@example.com",
+  "phone": "9876543210",
+  "status": "CONTACTED",
+  "created_at": "2026-09-24T17:15:00.000Z",
+  "updated_at": "2026-09-24T17:18:30.000Z"
+}
+```
+
+---
+
+#### 6. Update Lead Contact Information (`PATCH /leads/:id`)
+
+Updates lead contact information (`full_name`, `email`, `phone`) and records a `LEAD_UPDATED` activity audit record with field-level diffs.
+
+```bash
+curl -X PATCH "<API_URL>/leads/e6a18d18-3563-455a-bd5b-9f6046eef831" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <API_KEY>" \
+  -d '{
+    "full_name": "Jane Smith",
+    "email": "jane.smith@example.com",
+    "phone": "+1987654321"
+  }'
+```
+
+**Response (`200 OK`)**:
+
+```json
+{
+  "id": "e6a18d18-3563-455a-bd5b-9f6046eef831",
+  "external_lead_id": "demo-001",
+  "full_name": "Jane Smith",
+  "email": "jane.smith@example.com",
+  "phone": "+1987654321",
+  "status": "CONTACTED",
+  "created_at": "2026-09-24T17:15:00.000Z",
+  "updated_at": "2026-09-24T17:22:15.000Z"
+}
+```
+
+---
+
+#### 7. Get Lead Activity Audit Trail (`GET /leads/:id/activities`)
+
+Fetches the chronological, immutable audit log of all events for a specific lead.
+
+```bash
+curl -X GET "<API_URL>/leads/e6a18d18-3563-455a-bd5b-9f6046eef831/activities" \
+  -H "Authorization: Bearer <API_KEY>"
+```
+
+**Response (`200 OK`)**:
+
+```json
+[
+  {
+    "id": "f8a92b21-4467-4a0b-993d-82fae7a02c91",
+    "lead_id": "e6a18d18-3563-455a-bd5b-9f6046eef831",
+    "type": "STATUS_CHANGED",
+    "description": "Status changed from NEW to CONTACTED (Note: Spoke on phone with client; interested in product tier 2.)",
+    "actor": "user:dashboard",
+    "metadata": {
+      "from": "NEW",
+      "to": "CONTACTED",
+      "note": "Spoke on phone with client; interested in product tier 2."
+    },
+    "created_at": "2026-09-24T17:18:30.000Z"
+  },
+  {
+    "id": "b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e",
+    "lead_id": "e6a18d18-3563-455a-bd5b-9f6046eef831",
+    "type": "LEAD_CREATED",
+    "description": "Lead created from Meta webhook (external_lead_id: demo-001)",
+    "actor": "system:webhook",
+    "metadata": {
+      "leadgen_id": "demo-001"
+    },
+    "created_at": "2026-09-24T17:15:00.000Z"
+  }
+]
+```
+
+---
+
+### Health Check Endpoint
+
+#### 8. Health Check (`GET /health`)
+
+Verifies backend container status and active PostgreSQL database connectivity. Unauthenticated.
+
+```bash
+curl -X GET "<API_URL>/health"
+```
+
+**Response (`200 OK`)**:
+
+```json
+{
+  "status": "ok",
+  "database": "connected",
+  "timestamp": "2026-09-24T17:25:00.000Z"
+}
+```
