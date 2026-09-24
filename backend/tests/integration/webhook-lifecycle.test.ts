@@ -3,22 +3,18 @@ import request from 'supertest';
 import crypto from 'crypto';
 import { createApp } from '../../src/app.js';
 import { config } from '../../src/config/index.js';
-import { pool, checkDbHealth } from '../../src/db/index.js';
+import { checkDbHealth } from '../../src/db/index.js';
 import { runMigrations } from '../../src/db/migrate.js';
 
 describe('End-to-End Webhook & Lead Lifecycle Integration', () => {
   const app = createApp();
-  let dbAvailable = false;
 
   beforeAll(async () => {
-    dbAvailable = await checkDbHealth();
-    if (dbAvailable) {
-      try {
-        await runMigrations();
-      } catch (e) {
-        console.warn('Migration run in test warning:', e);
-      }
+    const dbAvailable = await checkDbHealth();
+    if (!dbAvailable) {
+      throw new Error('PostgreSQL is required for integration tests but is unavailable');
     }
+    await runMigrations();
   });
 
   const signPayload = (payload: object): string => {
@@ -29,10 +25,6 @@ describe('End-to-End Webhook & Lead Lifecycle Integration', () => {
   };
 
   it('executes full flow: ingest lead -> duplicate check -> list -> detail -> status update -> audit log', async () => {
-    if (!dbAvailable) {
-      console.warn('Skipping database-dependent test because local PostgreSQL is unreachable.');
-      return;
-    }
 
     const testLeadgenId = `test_flow_${Date.now()}`;
     const payload = {
