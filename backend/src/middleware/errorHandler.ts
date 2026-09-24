@@ -58,6 +58,14 @@ export function errorHandler(
     return;
   }
 
+  // Handle CORS errors
+  if (err && err.message === 'Not allowed by CORS') {
+    res.status(403).json({
+      error: 'Not allowed by CORS',
+    });
+    return;
+  }
+
   // Handle PostgreSQL input/encoding errors (22021: invalid byte sequence, 22P02: invalid text representation)
   if (err && (err.code === '22021' || err.code === '22P02')) {
     res.status(400).json({

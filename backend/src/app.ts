@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { config } from './config/index.js';
 import { requestLogger } from './middleware/requestLogger.js';
-import { errorHandler } from './middleware/errorHandler.js';
+import { errorHandler, AppError } from './middleware/errorHandler.js';
 import { checkDbHealth } from './db/index.js';
 import { webhookRouter } from './modules/webhook/routes.js';
 import { leadsRouter } from './modules/leads/routes.js';
@@ -27,7 +27,7 @@ export function createApp(): Express {
         if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
           return callback(null, true);
         }
-        return callback(null, true);
+        return callback(new AppError('Not allowed by CORS', 403));
       },
       credentials: true,
     })
