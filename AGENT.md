@@ -4,17 +4,17 @@
 
 This document provides a transparent and rigorous audit of all AI-assisted engineering activities conducted during the design, architecture, development, security hardening, and verification of the **Lead Intake Service**.
 
-### Engineering Ownership Declaration
+### Engineering Ownership & AI Collaboration
 
-All core system architectures, domain models, cryptographic security specifications, concurrency invariants, relational database schemas, error handling paradigms, and engineering trade-offs were **exclusively conceived, architected, and driven by the Human Lead Engineer**.
+The core system architecture, domain models, cryptographic security specifications, concurrency invariants, relational database schemas, error handling paradigms, and engineering trade-offs were designed, reviewed, and driven by the engineer.
 
-AI tooling (**Google Antigravity** running **Gemini 3.8 Flash**) was utilized in a supervised pair-programming and consultative capacity:
+AI tooling (**Google Antigravity** running **Gemini 3.8 Flash** and **Claude Sonnet**) was utilized in an assistive pair-programming and consultative capacity:
 
 1. To explore architectural trade-offs and brainstorm pros and cons across candidate solutions.
 2. To accelerate monorepo scaffolding and generate typed boilerplate from human specifications.
 3. To expand repetitive test scenarios and run automated verification suites.
 
-Every line of AI-generated code and every architectural option explored was critically evaluated, tested, and decided upon by the human engineer to satisfy production-grade quality, performance, and security standards.
+Every line of AI-assisted code and candidate architecture option was critically evaluated, tested, and refined by the engineer to satisfy production-grade quality, performance, and security standards.
 
 ---
 
@@ -22,6 +22,7 @@ Every line of AI-generated code and every architectural option explored was crit
 
 | Tool                            | Model / Version                         | Role in Project                                               | Scope of Usage & Supervision                                                                                                                                                                                                                                                      |
 | :------------------------------ | :-------------------------------------- | :------------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Claude** | Claude Sonnet 5 | Brainstorming & Trade-off Analysis Partner | Used as a sounding board for structured brainstorming and Q&A on open decisions (lead schema, auth model, webhook verification depth, DB/testing tooling) before any code was written. For each open question, laid out the candidate options with pros/cons; final choice on every point — schema shape, auth approach, verification depth, ORM vs. plain SQL, TanStack Query vs. plain fetch, test runner, deployment target — was made by the developer. Drafted `SPEC.md` and the initial `AGENT.md` structure to those specifications, with each section reviewed and confirmed before being finalized. |
 | **Google Antigravity**          | Gemini 3.8 Flash (Agentic Execution)    | Supervised Pair-Programming Assistant & Consultative Executor | Executed monorepo scaffolding, boilerplate file creation, CSS module extraction, and repetitive test case authoring strictly under human architectural specifications, constraints, and line-by-line review. Provided candidate trade-off analyses during brainstorming sessions. |
 | **Node.js Crypto & Vitest CLI** | Node.js v22.x built-ins / Vitest v2.1.9 | Cryptographic verification & test execution harness           | Verification harness executing 73 automated unit, integration, and end-to-end tests across backend and frontend under human-designed test plans.                                                                                                                                  |
 
@@ -52,7 +53,7 @@ The following table documents the progression of engineering directives, collabo
 
 ## 3. AI-Generated vs. Manually Written & Supervised Sections
 
-To provide unequivocal clarity regarding engineering ownership, the table below contrasts the AI's assistive execution against the **Human Architect's design ownership, security implementations, and domain decisions**:
+To provide clear transparency regarding the engineering process, the table below contrasts the AI's assistive contributions against the architectural decisions, security implementations, and domain constraints driven by the engineer:
 
 | Architectural Subsystem                        | AI Pair-Programming Contributions (Syntax, Scaffolding & Feedback)                                           | Human Architectural Ownership, Security Implementations & Key Decisions                                                                                                                                                                                                                                               |
 | :--------------------------------------------- | :----------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -72,7 +73,7 @@ To provide unequivocal clarity regarding engineering ownership, the table below 
 
 ## 4. Collaborative Brainstorming & Security Trade-off Sessions
 
-During development, the Human Lead Engineer engaged in targeted consultative dialogues with the AI assistant to stress-test candidate designs, weigh trade-offs, and arrive at optimal architectural and security decisions. The following logs summarize the key sessions:
+During development, structured consultative sessions were conducted with the AI assistant to explore candidate designs, weigh trade-offs, and arrive at optimal architectural and security decisions. The following logs summarize the key sessions:
 
 ### Session 1: Webhook Raw-Body Capture vs. Body-Parser Mutation
 
@@ -180,6 +181,8 @@ The following architectural decisions were made during development to balance pr
 | **ADR-11** | **Frontend State: Custom Hooks + Native Fetch**           | Eliminates external dependency weight (~40kB saved). Server audit log is the immediate source of truth.                                           | TanStack Query / Redux Toolkit (unneeded complexity for a 3-screen view).                       |
 | **ADR-12** | **Testing: Shared Vitest Across Monorepo**                | Single test runner and configuration across backend and frontend, reducing CI maintenance overhead.                                               | Jest (backend) + Vitest (frontend) configuration divergence.                                    |
 | **ADR-13** | **Deployment: Multi-stage Docker + Automated Migrations** | Multi-stage Dockerfiles compiling TypeScript to lean production images; automated migration step on container startup.                            | Manual cloud server setup / uncontainerized VPS.                                                |
+| **ADR-14** | **Database Indexing: Composite Pagination Indexes**       | Added composite indexes on `(created_at DESC, id DESC)` and `(status, created_at DESC)` guaranteeing fast index-scan pagination without table scans. | Unindexed sequential scans or relying solely on single-column indexes.                          |
+| **ADR-15** | **Frontend State: URL Search Parameters Sync**            | Synchronized filter, search, and page state with `useSearchParams`, enabling persistent and shareable dashboard views with zero library overhead. | Ephemeral component `useState` (state lost on refresh) or heavy global state stores.           |
 
 ---
 

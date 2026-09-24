@@ -4,6 +4,24 @@ A production-ready inbound lead intake service that ingests Meta Lead Ads webhoo
 
 ---
 
+## 🌐 Live Deployment
+
+The service is deployed live on **Railway**, built and orchestrated directly from production multi-stage **Dockerfiles** (`backend/Dockerfile` and `frontend/Dockerfile`):
+
+| Service | Live URL | Deployment & Container Architecture |
+| :--- | :--- | :--- |
+| **Frontend Dashboard** | [https://earnest-charisma-production-e8a7.up.railway.app](https://earnest-charisma-production-e8a7.up.railway.app) | React 18 + TypeScript SPA served via Nginx in a multi-stage Docker container |
+| **Backend API** | [https://leadintakeservice-production.up.railway.app](https://leadintakeservice-production.up.railway.app) | Node.js 22 + Express containerized with multi-stage Dockerfile |
+| **API Health Check** | [https://leadintakeservice-production.up.railway.app/health](https://leadintakeservice-production.up.railway.app/health) | Verifies container status & active PostgreSQL connection |
+| **Database** | Managed PostgreSQL 16 | Relational schema with auto-migrations and composite pagination indexes |
+
+> [!NOTE]
+> **Authentication for Reviewers**:
+> The live dashboard is pre-configured with the default API key. If testing protected API endpoints (`/leads*`) directly via cURL or Postman, include:
+> `Authorization: Bearer O+0s)t3_{KRr]?3j`
+
+---
+
 ## 1. Architecture
 
 ### System Architecture Diagram
@@ -145,14 +163,14 @@ docker-compose up --build
 
 ### Running Tests
 
-Execute 73 comprehensive automated tests across the monorepo:
+Execute 77 comprehensive automated tests across the monorepo:
 
 ```bash
 npm test
 ```
 
-- **Backend (49 tests)**: Vitest + Supertest covering HMAC cryptographic verification, payload parsing, status transition rules, API authentication, error handling, input sanitization, contact retention rules, and complete webhook ingestion lifecycle.
-- **Frontend (24 tests)**: Vitest + React Testing Library covering UI components, status badges, pagination, table rendering, inline lead editing, and audit activity timeline.
+- **Backend (51 tests)**: Vitest + Supertest covering HMAC cryptographic verification, payload parsing, status transition rules, API authentication, error handling, input sanitization, contact retention rules, and complete webhook ingestion lifecycle.
+- **Frontend (26 tests)**: Vitest + React Testing Library covering UI components, status badges, pagination, URL search parameters synchronization, table rendering, inline lead editing, and audit activity timeline.
 
 ---
 
@@ -174,7 +192,7 @@ The application is containerized with multi-stage Dockerfiles ready for deployme
      - `API_KEY`: Generate a secure random string (e.g. `openssl rand -hex 24`)
      - `WEBHOOK_VERIFY_TOKEN`: Your custom webhook verification string
      - `META_APP_SECRET`: Your Meta App Secret
-     - `CORS_ORIGIN`: URL of your deployed frontend (e.g. `https://your-frontend.up.railway.app`)
+     - `CORS_ORIGIN`: URL of your deployed frontend (`https://earnest-charisma-production-e8a7.up.railway.app`)
      - `NODE_ENV`: `production`
    - Set **Start Command**:
      ```bash
@@ -186,17 +204,17 @@ The application is containerized with multi-stage Dockerfiles ready for deployme
    - In the same project, click **New Service** → **GitHub Repo** → Select `LeadIntakeService`.
    - Set **Root Directory** to `/frontend`.
    - Add Environment Variables:
-     - `VITE_API_URL`: Your backend Railway URL (e.g. `https://your-backend.up.railway.app`)
+     - `VITE_API_URL`: Your backend Railway URL (`https://leadintakeservice-production.up.railway.app`)
      - `VITE_API_KEY`: Matching `API_KEY` defined on the backend
    - Railway will build using `frontend/Dockerfile` (multi-stage build serving static assets with lightweight nginx).
 
 4. **Verify Deployment**:
    - Ping the health check:
      ```bash
-     curl https://your-backend.up.railway.app/health
+     curl https://leadintakeservice-production.up.railway.app/health
      ```
      Expected response: `{"status": "ok", "database": "connected"}`.
-   - Open your deployed frontend URL to view the live dashboard.
+   - Open [https://earnest-charisma-production-e8a7.up.railway.app](https://earnest-charisma-production-e8a7.up.railway.app) to view the live dashboard.
 
 ---
 
@@ -243,6 +261,50 @@ If traffic grows from hundreds of leads per day to tens of thousands per hour du
    - Introduce user accounts (`Admin`, `Sales Rep`, `Viewer`) where the `activities.actor` column stores the authenticated user's ID (`user:<id>`) alongside audit session metadata.
 5. **Advanced CRM Capabilities**:
    - Add saved filter presets, custom date range filtering, bulk status updates, and CSV/Excel export functionality on the Lead List view.
+
+### Target State Architecture (Next-Gen Scaling)
+
+The following diagram illustrates the evolution of the system architecture from the current synchronous ingestion pipeline to an enterprise-grade, event-driven decoupled architecture:
+
+```
+                                  [ Meta Webhook ]
+                                         │
+                                 POST /webhook/meta-lead
+                            (Fast HMAC Check + Inbound Queue)
+                                         │
+                                         ▼
+                               [ Queue / Inbound Buffer ]
+                               (e.g., Redis Streams / BullMQ)
+                                         │
+                                         ▼
+                               [ Background Worker ]
+                        (Defensive Mapping + Transactional DB Write)
+                                         │
+                                         ▼
+       ┌───────────────────────── PostgreSQL 16 ─────────────────────────┐
+       │ • leads (Indexed: status, created_at, trgm search)              │
+       │ • activities (Compound index: lead_id, created_at, id)          │
+       │ • Read Replicas (PgBouncer) for Dashboard Reads                 │
+       └─────────────────────────────────┬───────────────────────────────┘
+                                         │
+                         ┌───────────────┴───────────────┐
+                         ▼                               ▼
+                 [ REST Endpoints ]              [ SSE Stream ]
+                 GET /leads (Paged/Keyset)       GET /leads/stream
+                 PATCH /leads/:id                (Push on LEAD_CREATED,
+                 PATCH /leads/:id/status          STATUS_CHANGED)
+                         │                               │
+                         └───────────────┬───────────────┘
+                                         ▼
+                     ┌───────────────────────────────────────┐
+                     │ React 18 Dashboard                    │
+                     │ • Server-state caching (TanStack Query│
+                     │   with targeted query invalidation)   │
+                     │ • URL-synced search/filter/page state │
+                     │ • Real-time event listener (SSE)      │
+                     │ • Decomposed modular UI components    │
+                     └───────────────────────────────────────┘
+```
 
 ---
 
