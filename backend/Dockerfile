@@ -18,11 +18,13 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY package*.json ./
+COPY --chown=node:node package*.json ./
 RUN npm install --omit=dev
 
-COPY --from=builder /app/dist ./dist
-COPY migrations ./migrations
+COPY --chown=node:node --from=builder /app/dist ./dist
+COPY --chown=node:node migrations ./migrations
+
+USER node
 
 EXPOSE 3000
 
