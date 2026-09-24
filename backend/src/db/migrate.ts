@@ -16,7 +16,8 @@ export async function runMigrations(): Promise<void> {
     });
     console.log('✅ Database schema is up to date.');
   } catch (err: any) {
-    console.warn(`⚠️ Database migration notice: ${err.message}`);
+    console.error(`❌ Database migration failed: ${err.message}`);
+    throw err;
   }
 }
 
