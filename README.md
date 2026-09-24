@@ -8,30 +8,32 @@ A production-oriented inbound lead intake service that ingests Meta Lead Ads web
 
 The service is deployed live on **Railway**, built and orchestrated directly from production multi-stage **Dockerfiles** (`backend/Dockerfile` and `frontend/Dockerfile`):
 
-| Service | Live URL | Deployment & Container Architecture |
-| :--- | :--- | :--- |
-| **Frontend Dashboard** | [https://earnest-charisma-production-e8a7.up.railway.app](https://earnest-charisma-production-e8a7.up.railway.app) | React 18 + TypeScript SPA served via Nginx in a multi-stage Docker container |
-| **Backend API** | [https://leadintakeservice-production.up.railway.app](https://leadintakeservice-production.up.railway.app) | Node.js 22 + Express containerized with multi-stage Dockerfile |
-| **API Health Check** | [https://leadintakeservice-production.up.railway.app/health](https://leadintakeservice-production.up.railway.app/health) | Verifies container status & active PostgreSQL connection |
-| **Database** | Managed PostgreSQL 16 | Relational schema with auto-migrations and composite pagination indexes |
+| Service                | Live URL                                                                                                                 | Deployment & Container Architecture                                          |
+| :--------------------- | :----------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------- |
+| **Frontend Dashboard** | [https://earnest-charisma-production-e8a7.up.railway.app](https://earnest-charisma-production-e8a7.up.railway.app)       | React 18 + TypeScript SPA served via Nginx in a multi-stage Docker container |
+| **Backend API**        | [https://leadintakeservice-production.up.railway.app](https://leadintakeservice-production.up.railway.app)               | Node.js 22 + Express containerized with multi-stage Dockerfile               |
+| **API Health Check**   | [https://leadintakeservice-production.up.railway.app/health](https://leadintakeservice-production.up.railway.app/health) | Verifies container status & active PostgreSQL connection                     |
+| **Database**           | Managed PostgreSQL 16                                                                                                    | Relational schema with auto-migrations and composite pagination indexes      |
 
 > [!NOTE]
 > **Authentication for Reviewers**:
 > The live dashboard is pre-configured with the production API key. If testing protected API endpoints (`/leads*`) directly via cURL or Postman, include:
 > `Authorization: Bearer <API_KEY>`
-> 
-> *(The live API key has been redacted for security. Reviewers can request the active key to test protected endpoints directly.)*
+>
+> _(The live API key has been redacted for security. Reviewers can request the active key to test protected endpoints directly.)_
 
 ---
 
 ## 🖥️ Application Preview
 
 ### 1. Inbound Leads Dashboard
+
 Search, filter by lifecycle status, sort chronologically, and paginate through leads ingested from Meta Ads webhooks:
 
 ![Inbound Leads Dashboard](docs/screenshots/lead-dashboard.png)
 
 ### 2. Lead Details & Activity Audit Trail
+
 Split-panel view displaying lead contact attributes, FSM pipeline lifecycle controls, raw webhook payload viewer, and the immutable audit trail with actor attribution:
 
 ![Lead Details & Activity Audit Trail](docs/screenshots/lead-details-audit-timeline.png)
@@ -129,15 +131,15 @@ cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
 
-| Variable               | Description                                            | Default (Local)                                           |
-| :--------------------- | :----------------------------------------------------- | :-------------------------------------------------------- |
-| `PORT`                 | Backend HTTP listening port                            | `3000`                                                    |
+| Variable               | Description                                            | Default (Local)                                              |
+| :--------------------- | :----------------------------------------------------- | :----------------------------------------------------------- |
+| `PORT`                 | Backend HTTP listening port                            | `3000`                                                       |
 | `DATABASE_URL`         | PostgreSQL connection string                           | `postgres://postgres:postgres@localhost:5432/lead_intake_db` |
-| `API_KEY`              | Dashboard API authorization key                        | `dev_secret_key_123`                                      |
-| `WEBHOOK_VERIFY_TOKEN` | Meta Webhook GET verification token                    | `meta_webhook_verify_token_xyz`                           |
-| `META_APP_SECRET`      | Meta App Secret for HMAC-SHA256 signature verification | `meta_test_secret_abc123`                                 |
-| `VITE_API_URL`         | Frontend connection URL to backend API                 | `http://localhost:3000`                                   |
-| `VITE_API_KEY`         | Frontend bearer token matching `API_KEY`               | `dev_secret_key_123`                                      |
+| `API_KEY`              | Dashboard API authorization key                        | `dev_secret_key_123`                                         |
+| `WEBHOOK_VERIFY_TOKEN` | Meta Webhook GET verification token                    | `meta_webhook_verify_token_xyz`                              |
+| `META_APP_SECRET`      | Meta App Secret for HMAC-SHA256 signature verification | `meta_test_secret_abc123`                                    |
+| `VITE_API_URL`         | Frontend connection URL to backend API                 | `http://localhost:3000`                                      |
+| `VITE_API_KEY`         | Frontend bearer token matching `API_KEY`               | `dev_secret_key_123`                                         |
 
 ### Option A: Local Run with Docker Compose (Recommended)
 
@@ -179,13 +181,13 @@ docker-compose up --build
 
 ### Running Tests
 
-Execute 77 comprehensive automated tests across the monorepo:
+Execute 89 comprehensive automated tests across the monorepo:
 
 ```bash
 npm test
 ```
 
-- **Backend (51 tests)**: Vitest + Supertest covering HMAC cryptographic verification, payload parsing, status transition rules, API authentication, error handling, input sanitization, contact retention rules, and complete webhook ingestion lifecycle.
+- **Backend (63 tests)**: Vitest + Supertest covering HMAC cryptographic verification, payload parsing, status transition rules, API authentication, error handling, input sanitization, contact retention rules, and complete webhook ingestion lifecycle.
 - **Frontend (26 tests)**: Vitest + React Testing Library covering UI components, status badges, pagination, URL search parameters synchronization, table rendering, inline lead editing, and audit activity timeline.
 
 ---
