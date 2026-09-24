@@ -207,7 +207,7 @@ export const App: React.FC = () => {
                   lineHeight: 1.5,
                 }}
               >
-                Production-ready Meta Lead Ads ingestion pipeline with
+                Production-oriented Meta Lead Ads ingestion pipeline with
                 cryptographic HMAC-SHA256 verification, transactional
                 deduplication, and immutable audit activity trails.
               </p>

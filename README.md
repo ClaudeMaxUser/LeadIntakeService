@@ -1,6 +1,6 @@
 # Lead Intake Service
 
-A production-ready inbound lead intake service that ingests Meta Lead Ads webhooks, validates payloads, enforces deduplication and idempotency, tracks status workflow transitions, and records an immutable audit trail.
+A production-oriented inbound lead intake service that ingests Meta Lead Ads webhooks, validates payloads, enforces deduplication and idempotency, tracks status workflow transitions, and records an immutable audit trail.
 
 ---
 
@@ -17,8 +17,24 @@ The service is deployed live on **Railway**, built and orchestrated directly fro
 
 > [!NOTE]
 > **Authentication for Reviewers**:
-> The live dashboard is pre-configured with the default API key. If testing protected API endpoints (`/leads*`) directly via cURL or Postman, include:
-> `Authorization: Bearer O+0s)t3_{KRr]?3j`
+> The live dashboard is pre-configured with the production API key. If testing protected API endpoints (`/leads*`) directly via cURL or Postman, include:
+> `Authorization: Bearer <API_KEY>`
+> 
+> *(The live API key has been redacted for security. Reviewers can request the active key to test protected endpoints directly.)*
+
+---
+
+## 🖥️ Application Preview
+
+### 1. Inbound Leads Dashboard
+Search, filter by lifecycle status, sort chronologically, and paginate through leads ingested from Meta Ads webhooks:
+
+![Inbound Leads Dashboard](docs/screenshots/lead-dashboard.png)
+
+### 2. Lead Details & Activity Audit Trail
+Split-panel view displaying lead contact attributes, FSM pipeline lifecycle controls, raw webhook payload viewer, and the immutable audit trail with actor attribution:
+
+![Lead Details & Activity Audit Trail](docs/screenshots/lead-details-audit-timeline.png)
 
 ---
 
