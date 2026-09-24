@@ -132,7 +132,7 @@ cp frontend/.env.example frontend/.env
 | Variable               | Description                                            | Default (Local)                                           |
 | :--------------------- | :----------------------------------------------------- | :-------------------------------------------------------- |
 | `PORT`                 | Backend HTTP listening port                            | `3000`                                                    |
-| `DATABASE_URL`         | PostgreSQL connection string                           | `postgres://postgres:postgres@localhost:5432/lead_intake` |
+| `DATABASE_URL`         | PostgreSQL connection string                           | `postgres://postgres:postgres@localhost:5432/lead_intake_db` |
 | `API_KEY`              | Dashboard API authorization key                        | `dev_secret_key_123`                                      |
 | `WEBHOOK_VERIFY_TOKEN` | Meta Webhook GET verification token                    | `meta_webhook_verify_token_xyz`                           |
 | `META_APP_SECRET`      | Meta App Secret for HMAC-SHA256 signature verification | `meta_test_secret_abc123`                                 |
